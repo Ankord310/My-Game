@@ -17,12 +17,12 @@ const Mil={
     const n=MN.map(o=>({...o,inf:0,sq:0,blk:0,dead:0,cap:o.pop,dp:o.pop,di:0}));
     const L=G.fociLeft||0;n[1].inf=clamp(.30+.04*L,.30,.7);n[0].inf=n[2].inf=clamp(.04+.02*L,.04,.25);
     n.forEach(o=>{if(o.k==='d'){const R=Maps.D3[o.id];o.dots=Array.from({length:72},()=>({x:rnd(R[0]+8,R[2]-8),y:rnd(R[1]+8,R[3]-8),vx:rnd(-9,9),vy:rnd(-9,9),ph:rnd(0,6)}))}});
-    const s=this.s={fxs:[],shake:0,t:0,dur:200,n,sel:1,buses:[],saved:0,killed:0,sup:G.support,cruel:0,sqPool:3-((G.s2waste||0)>=6?1:0),med:0,medWarn:false,sirT:rnd(3,6),panT:2,heli:0,log:[],end:false,hudT:0,esc:false,uiSig:'',smoke:[],scars:[],dsaved:0,flash:[],ob:26};
+    const s=this.s={fxs:[],shake:0,t:0,dur:200,n,sel:1,buses:[],saved:0,killed:0,sup:G.support,cruel:0,sqPool:3-((G.s2waste||0)>=6?1:0),med:0,medWarn:false,sirT:rnd(3,6),panT:2,ev:null,evT:rnd(26,38),ret:[],heli:0,log:[],end:false,hudT:0,esc:false,uiSig:'',smoke:[],scars:[],dsaved:0,flash:[],ob:26};
     {const w2=G.s2waste||0;if(w2>=3)this.log('Штаб: службы измотаны ложными вызовами'+(w2>=6?' — отрядов меньше':''));
       if(G.support<40)this.log('Доверие людей низкое: медики могут отказаться работать')}
     ctrl(false);this.ui();this.hudUpd();this.lt=performance.now();if(Coach.need('s3'))this.coach();else say('Вы — командир. Эвакуируйте людей и сдерживайте заражённые районы.',4.5);
   },
-  exit(){},
+  exit(){const b=$('#evbox');if(b){b.style.display='none';b._raw=null;b.innerHTML=''}},
   mkStrip(){const ex=Math.max(0,OX);this.exW=ex;this.strip=ex>2?Maps.cityStrip('c3',ex,RS):null},
   resize(){if(this.s&&this.exW!==Math.max(0,OX))this.mkStrip()},
   // время суток: миссия = сутки с 06:00; ночью заражение растёт быстрее, днём работать легче
@@ -53,10 +53,54 @@ const Mil={
     else if(a==='heli'){if(s.med>0){say('Медики отказываются лететь ещё '+Math.ceil(s.med)+' с',2);return}
       if(s.heli>0||s.sup<25||s.t<25||o.k!=='d'){say(s.t<25?'Вертолёты будут через '+Math.ceil(25-s.t)+' с':s.sup<25?'Лётчики отказались: доверие слишком низкое':'Вертолёт ещё в рейсе',2);return}
       const load=Math.min(Math.round(60*(1-.25*this.nk())),Math.floor(o.pop*(1-o.inf)));if(load<=0)return;o.pop-=load;s.saved+=load;s.heli=Math.round(22*(1+.4*this.nk()));s.fxs.push({k:'heli',x0:o.x,y0:o.y,x1:MN[4].x,y1:MN[4].y,t:0,d:2.8,load});this.log('Вертолёт вывез '+load+' из '+o.nm);beep(700,.1);vib(20)}
-    else if(a==='art'){if(!s.esc||o.k!=='d')return;const k=Math.floor(o.pop*(1-o.inf)*.5);o.pop-=Math.floor(o.pop*.5);s.killed+=k;G.losses+=Math.ceil(k/20);o.inf*=.25;s.shake=.6;s.fxs.push({k:'boom',x:o.x,y:o.y,t:0,d:2.4,seed:(Math.random()*1000)|0});s.scars.push({x:o.x+rnd(-8,8),y:o.y+rnd(-6,6),r:15,t:0});s.sup=Math.max(0,s.sup-14);s.cruel+=1;G.cruelty+=1;this.pop(o.x,o.y-24,'погибли '+k,'#ff6b5c',1);this.log('Артудар по '+o.nm+': погибли мирные ('+k+')');say('Артиллерия: заражённых мало, но погибли и жители. Поддержка падает.',3.5);beep(90,.4,.08,'sawtooth');vib([80,40,120])}
+    else if(a==='art'){if(!s.esc||o.k!=='d')return;this.doArt(o)}
     else if(a==='bridge'){if(o.k!=='b'||o.dead)return;o.dead=1;o.blk=1;s.shake=.6;s.fxs.push({k:'boom',x:o.x,y:o.y,t:0,d:2.4,seed:(Math.random()*1000)|0});s.sup=Math.max(0,s.sup-6);s.cruel+=.5;G.bridges++;this.log(o.nm+' взорван');say('Мост разрушен: заражение не пройдёт, но и колонны тоже.',3);beep(70,.5,.09,'sawtooth');vib([100,50,140])}
     this.ui();
   },
+  doArt(o){const s=this.s,k=Math.floor(o.pop*(1-o.inf)*.5);o.pop-=Math.floor(o.pop*.5);s.killed+=k;G.losses+=Math.ceil(k/20);o.inf*=.25;s.shake=.6;s.fxs.push({k:'boom',x:o.x,y:o.y,t:0,d:2.4,seed:(Math.random()*1000)|0});s.scars.push({x:o.x+rnd(-8,8),y:o.y+rnd(-6,6),r:15,t:0});s.sup=Math.max(0,s.sup-14);s.cruel+=1;G.cruelty+=1;this.pop(o.x,o.y-24,'погибли '+k,'#ff6b5c',1);this.log('Артудар по '+o.nm+': погибли мирные ('+k+')');say('Артиллерия: заражённых мало, но погибли и жители. Доверие падает.',3.5);beep(90,.4,.08,'sawtooth');vib([80,40,120])},
+  // ---------------------------------------------------------------- случайные события с выбором
+  EV:{
+    jam:{t:e=>'Мост перегружен: '+e.nm,x:'Колонны встали в пробку. Она рассосётся сама, но можно расчистить мост силой.',a:['Расчистить силой','доверие −3'],b:['Ждать','колонны стоят'],def:1,ttl:18},
+    loot:{t:e=>'Мародёры: '+e.nm,x:'Банды грабят склады и мешают эвакуации. Нужен отряд, иначе район понесёт потери.',a:['Отряд на зачистку','−1 отряд на 15 с'],b:['Не вмешиваться','потери и доверие'],def:1,ttl:22},
+    press:{t:e=>'Журналисты: '+e.nm,x:'Съёмочная группа просит допуск в район. Огласка повысит доверие, но их присутствие опасно.',a:['Допустить','доверие +6, риск'],b:['Выставить','доверие −3'],def:1,ttl:20},
+    order:{t:e=>'Приказ генерала: '+e.nm,x:'Командование требует немедленный артиллерийский удар по району. Погибнут и мирные.',a:['Выполнить','жестоко'],b:['Отказать','вертолёты заняты'],def:1,ttl:20}
+  },
+  evStart(){
+    const s=this.s,D=s.n.map((o,i)=>[o,i]).filter(([o])=>o.k==='d'&&o.pop>80),B=s.n.map((o,i)=>[o,i]).filter(([o])=>o.k==='b'&&!o.dead);
+    const L=[];if(B.length)L.push('jam');if(D.length)L.push('loot','press');if(s.t>55&&D.length)L.push('order');if(!L.length)return;
+    const k=pick(L),e={k,t:0,ttl:this.EV[k].ttl};
+    if(k==='jam'){const b=pick(B);e.i=b[1];e.nm=b[0].nm}
+    else if(k==='order'){D.sort((a,b)=>b[0].inf-a[0].inf);const d=D[0];e.i=d[1];e.nm=d[0].nm}
+    else{const d=pick(D);e.i=d[1];e.nm=d[0].nm}
+    if(k==='jam')s.jam={i:e.i,t:e.ttl};
+    s.ev=e;say('Событие: '+this.EV[k].t(e),2.5);beep(420,.12,.05,'triangle');setTimeout(()=>beep(560,.12,.05,'triangle'),130);vib([30,30,30]);this.evUi()},
+  evAct(c){
+    const s=this.s,e=s.ev;if(!e||s.end)return;const o=s.n[e.i];
+    if(e.k==='jam'){if(c===0){s.sup=Math.max(0,s.sup-3);s.cruel+=.25;G.cruelty+=.25;s.jam=null;this.log('Пробка на мосту расчищена силой');this.pop(o.x,o.y-14,'проезд открыт','#ffd067')}else this.log('Колонны ждут, пока рассосётся пробка');s.ev=null}
+    else if(e.k==='loot'){
+      if(c===0){if(s.sqPool<1){say('Нет свободных отрядов',1.8);return}s.sqPool--;s.ret.push({t:15});s.sup=Math.min(100,s.sup+2);this.log('Отряд разогнал мародёров: '+o.nm);this.pop(o.x,o.y-20,'порядок восстановлен','#7dffa6')}
+      else{const k=Math.floor(o.pop*.08);o.pop-=k;s.killed+=k;s.sup=Math.max(0,s.sup-4);this.log('Мародёры в районе '+o.nm+': потери '+k);this.pop(o.x,o.y-20,'погибли '+k,'#ff6b5c');beep(150,.2,.05,'sawtooth')}
+      s.ev=null}
+    else if(e.k==='press'){
+      if(c===0){s.sup=Math.min(100,s.sup+6);o.inf=clamp(o.inf+.04,0,1);this.log('Журналисты сняли репортаж: доверие растёт');this.pop(o.x,o.y-20,'+6 доверия','#7dffa6')}
+      else{s.sup=Math.max(0,s.sup-3);this.log('Журналистов выставили из района '+o.nm)}
+      s.ev=null}
+    else if(e.k==='order'){
+      if(c===0){this.doArt(o)}
+      else{s.heli=Math.max(s.heli,25);this.log('Вы отказали генералу: вертолёты переброшены')}
+      s.ev=null}
+    s.evT=rnd(26,40);this.evUi();this.ui()},
+  evTick(dt){
+    const s=this.s;if(s.ret.length){for(const r of s.ret)r.t-=dt;const n=s.ret.filter(r=>r.t<=0).length;if(n){s.ret=s.ret.filter(r=>r.t>0);s.sqPool+=n;this.log('Отряд вернулся в резерв')}}
+    if(s.jam){s.jam.t-=dt;if(s.jam.t<=0){s.jam=null;this.log('Пробка на мосту рассосалась')}}
+    if(s.ev){s.ev.t+=dt;if(s.ev.t>=s.ev.ttl){s.ev.def=this.EV[s.ev.k].def;this.evAct(this.EV[s.ev.k].def)}else{s.evUiT=(s.evUiT||0)-dt;if(s.evUiT<=0){s.evUiT=.25;this.evUi()}}}
+    else if(s.t>16){s.evT-=dt;if(s.evT<=0){s.evT=rnd(26,40);this.evStart()}}},
+  evUi(){
+    const b=$('#evbox');if(!b)return;const s=this.s,e=s.ev;
+    if(!e){b.style.display='none';b._raw=null;b.innerHTML='';return}
+    const T=this.EV[e.k],pr=clamp(1-e.t/e.ttl,0,1),dis=e.k==='loot'&&s.sqPool<1||e.k==='jam'&&false;
+    b.style.display='block';
+    morphSet(b,`<div class="ev" data-key="ev${e.k}${e.i}"><div class="ad">⚠ ${T.t(e)}</div><div class="tt">${T.x}</div><div class="r2"><button class="pb ${e.k==='order'?'dng':''}" data-a="m_eva" ${dis?'disabled':''}><span class="tx">${T.a[0]}<small>${T.a[1]}</small></span></button><button class="pb" data-a="m_evb"><span class="tx">${T.b[0]}<small>${T.b[1]}</small></span></button></div><div class="tm" style="width:${(pr*100).toFixed(1)}%"></div></div>`)},
   update(dt){
     const s=this.s;if(s.end)return;s.t+=dt;s.heli=Math.max(0,s.heli-dt);const nk=this.nk();s.shake=Math.max(0,s.shake-dt);for(const f of s.fxs)f.t+=dt;s.fxs=s.fxs.filter(f=>f.t<f.d);for(const q of s.scars)q.t+=dt;s.scars=s.scars.filter(q=>q.t<40);
     if(!s.esc&&(s.t>70||s.n[1].inf>.6)){s.esc=true;this.log('Открыта эскалация: артиллерия, мосты');say('Командование разрешило артиллерию и подрыв мостов.',4);this.ui()}
@@ -75,7 +119,7 @@ const Mil={
       s.sirT-=dt;if(s.sirT<=0){s.sirT=rnd(7,11);if(mx>.45)Snd.siren(clamp((mx-.4)*1.5,.3,1))}
       s.panT-=dt;if(s.panT<=0){s.panT=rnd(2.5,4);if(mx>.35)Snd.panic(clamp((mx-.3)*1.6,.2,1))}}
     let blkPop=0;for(const o of s.n)if(o.k==='d'&&o.blk&&o.pop>0)blkPop++;s.sup=clamp(s.sup-blkPop*.04*dt,0,100);
-    this.busTick(dt);
+    this.evTick(dt);this.busTick(dt);
     for(const f of s.fxs)if(f.k==='heli'&&f.t+dt>=f.d&&!f.landed){f.landed=1;s.sup=Math.min(100,s.sup+1);this.pop(MN[4].x,MN[4].y-26,'+'+f.load,'#7dffa6',1);s.fxs.push({k:'ring',x:MN[4].x,y:MN[4].y,t:0,d:1.2})}
     s.ob-=dt;if(s.ob<=0){const kk=s.t/s.dur;s.ob=rnd(.9,1.1)*(20-7*kk)*(1.2-.4*nk);let o=pick(s.n.filter(q=>q.k==='d'&&q.pop>40));if(o&&o.sq>0&&Math.random()<.5)o=pick(s.n.filter(q=>q.k==='d'&&q.pop>40));
       if(o){o.inf=clamp(o.inf+rnd(.08,.16),0,1);s.fxs.push({k:'ring',x:o.x,y:o.y,t:0,d:1.5,red:1});this.pop(o.x,o.y-32,'ВСПЫШКА','#ff6b5c',1);this.log('Вспышка заражения: '+o.nm);say('Вспышка заражения: '+o.nm+'!',2);beep(170,.2,.05,'sawtooth');vib(30)}}
@@ -85,6 +129,7 @@ const Mil={
   },
   busTick(dt){const s=this.s;
     for(const b of s.buses){const p=b.p,A=s.n[p[b.i]],B=s.n[p[b.i+1]];if(!B){b.done=1;continue}
+      const jam=s.jam&&s.jam.i===p[b.i+1]&&b.f>.55;b.stall=!!jam;if(jam)continue;
       const L=Math.hypot(B.x-A.x,B.y-A.y)||1;b.f+=22*(1.05-.15*this.nk())*dt/L;if(b.f>=1){b.f=0;b.i++;if(!b.back&&B.inf>.4&&B.k!=='s'){const lost=Math.floor(b.load*.3);b.load-=lost;s.killed+=lost;s.sup=Math.max(0,s.sup-lost*.12);this.pop(B.x,B.y-14,'−'+lost,'#ff6b5c');this.log('Колонна попала в заражённую зону: −'+lost)}}
       if(b.i>=p.length-1){
         if(!b.back){s.saved+=b.load;s.sup=Math.min(100,s.sup+2);this.pop(MN[4].x,MN[4].y-26,'+'+b.load,'#7dffa6',1);s.fxs.push({k:'ring',x:MN[4].x,y:MN[4].y,t:0,d:1.2});this.log('Автобус доставил '+b.load+' чел.');beep(740,.1);vib(24);
@@ -104,7 +149,7 @@ const Mil={
       {t:'Теперь снимите его: людей ещё нужно вывозить.',el:'#panel [data-a=m_blk]',wait:()=>!s.n[1].blk},
       {t:'Цель: вывезти больше людей и удержать центр (<36%) и аэродром (<24%). Вертолёт откроется через 25 с.',btn:'Принять командование ▶'}
     ],()=>{this.ui();say('Командование принято!',2)})},
-  finish(){const s=this.s;s.end=true;G.saved+=s.saved;G.support=Math.round(s.sup);
+  finish(){const s=this.s;s.end=true;s.ev=null;this.evUi();G.saved+=s.saved;G.support=Math.round(s.sup);
     let pp=0,pi=0;for(const o of s.n)if(o.k==='d'){pp+=o.pop;pi+=o.pop*o.inf}G.cityInf=pp>0?pi/pp:.2;G.epiInf=s.n[1].inf;
     G.contain3=s.n[1].inf<.36&&s.n[0].inf<.42&&s.n[2].inf<.42&&s.n[4].inf<.24;G.s3=s.saved;G.s3k=s.killed;setTimeout(()=>Flow.afterMil(),400)},
   hudUpd(){const s=this.s;hud(`<b>03 ВОЕННЫЙ</b><span class="g">спасено ${Cnt.h('s3.saved',s.saved,'n')}</span><span class="a">доверие ${Cnt.h('s3.sup',Math.round(s.sup),'p')}</span><span class="ob">${this.nk()>.55?'☾':'☀'} ${String(Math.floor(this.clock())).padStart(2,'0')}:${String(Math.floor(this.clock()%1*60)).padStart(2,'0')}</span><span class="r">погибло ${Cnt.h('s3.kill',s.killed,'n')}</span><span>${mmss(s.dur-s.t)}</span>`)},
@@ -217,6 +262,9 @@ const Mil={
     for(const o of s.n)if(o.k==='d')this.crisis(o,tm,dt,zs);
     zs.sort((a,b)=>a[0]-b[0]);for(const z of zs){if(z[2]<0)Art3.soldier(z[1],z[0],-z[2],tm,1,z[3]);else if(z[2]>=1e6)Art3.person(z[1],z[0],z[2]-1e6,tm,z[3]);else Art3.zombie(z[1],z[0],z[2],tm,true)}
     // автобусы, вертолёты, взрывы
+    if(s.jam){const o=s.n[s.jam.i],a=.5+.5*Math.sin(tm*6);Post.glow(o.x,o.y,22,'255,70,50',.18+.14*a);
+      for(let k=0;k<4;k++){Art3.car(o.x-17-k*7,o.y+(k%2?1.8:-1.8),1,0,{k:'civ',park:1,col:['#7a2d2d','#2d4f7a','#9aa6ad','#c4b46a'][k]})}
+      otx('ПРОБКА',o.x,o.y-15,'#ff8d82',9,'center',.7+.3*a)}
     for(const b of s.buses){if(!b.p)continue;cx.save();cx.setLineDash([2,3]);cx.lineDashOffset=-tm*14;cx.strokeStyle=b.back?'rgba(160,200,220,.3)':'rgba(255,208,103,.55)';cx.lineWidth=.9;cx.beginPath();cx.moveTo(b.x,b.y);for(let i=b.i+1;i<b.p.length;i++){const N=s.n[b.p[i]];cx.lineTo(N.x,N.y)}cx.stroke();cx.restore();
       if(Math.random()<dt*10)s.smoke.push({x:b.x-b.dx*7+rnd(-1,1),y:b.y-b.dy*7+rnd(-1,1),v:rnd(2,5),l:0,m:rnd(.5,1)})}
     for(const b of s.buses)Art3.bus(b.x,b.y,b.dx,b.dy,b.load,tm,this.nk());
@@ -253,3 +301,5 @@ const Mil={
   }
 };
 ACT.m_sq_p=()=>Mil.act('sq+');ACT['m_sq+']=()=>Mil.act('sq+');ACT['m_sq-']=()=>Mil.act('sq-');ACT.m_blk=()=>Mil.act('blk');ACT.m_bus=()=>Mil.act('bus');ACT.m_heli=()=>Mil.act('heli');ACT.m_art=()=>Mil.act('art');ACT.m_bridge=()=>Mil.act('bridge');
+
+ACT.m_eva=()=>Mil.evAct(0);ACT.m_evb=()=>Mil.evAct(1);

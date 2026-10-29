@@ -232,3 +232,10 @@ body.pn #toast{left:34.4%;max-width:56%}
 .kbd .pb:hover:not(:disabled),.kbd .pbtn:hover{filter:brightness(1.18)}
 .kbd #cv{cursor:pointer}
 .kbd #hud{padding-right:calc(13.6rem + max(0rem,var(--sr) - .7rem))!important}
+
+/* события этапа 3: карточка поверх карты внизу слева */
+#evbox{position:absolute;left:calc(1rem + var(--sl));bottom:calc(.8rem + var(--sb));width:27rem;max-width:calc(100% - 24rem - var(--sl) - var(--sr));display:none;z-index:4}
+#evbox .ev{background:linear-gradient(180deg,#1a2a38f5,#0c1822f5);border:1px solid #e5a93b;border-radius:.6rem;padding:.6rem .8rem;box-shadow:0 .3rem 1.4rem rgba(0,0,0,.6),0 0 1.2rem rgba(229,169,59,.25);position:relative;overflow:hidden;animation:cin .35s cubic-bezier(.2,.9,.3,1.2)}
+#evbox .ev .ad{font-size:1.3rem;color:#ffe3a8;font-weight:bold}#evbox .ev .tt{color:#cfe0ea;font-size:1rem;line-height:1.25;margin:.15rem 0 .4rem}
+#evbox .ev .tm{position:absolute;left:0;bottom:0;height:.24rem;background:#e5a93b}
+#evbox .ev .r2 .pb{min-width:0}
