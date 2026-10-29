@@ -108,6 +108,18 @@ const Art3=(()=>{
       R(x-4,y-3.2,8,2.6,Maps.sh(col,.5));R(x-4,y-3.2,8,2,col);R(x-4,y-3.2,8,.5,'rgba(255,255,255,.38)');R(x-3.5,y-2,2,.5,'rgba(0,0,0,.25)');R(x+1,y-2,2.5,.5,'rgba(0,0,0,.25)');
       R(x-1.8,y-5,3.8,2.2,Maps.sh(col,.78));R(x-1.8,y-5,3.8,.5,'rgba(255,255,255,.4)');R(x-1.8,y-3.3,3.8,.5,'rgba(0,0,0,.3)');R(x-.5,y-5.6,1.2,.6,'#101416');
       R(x+2,y-4.2,4.2,.6,'#232a2e');R(x+2,y-4.2,4.2,.2,'rgba(255,255,255,.25)');R(x+5.6,y-4.4,.6,1,'#0d1113');R(x-3.8,y-3,.5,.5,'#fff4c0');X.restore()},
+    // армейский грузовик с тентом: x,y — центр, (dx,dy) — направление
+    truck(x,y,dx,dy,load,t,night){const hz=Math.abs(dx)>=Math.abs(dy),L=16,Wd=6.5;X.save();X.translate(q(x),q(y));
+      if(!hz){X.rotate(dy>0?Math.PI/2:-Math.PI/2)}else if(dx<0){X.scale(-1,1)}
+      X.fillStyle='rgba(0,0,0,.4)';X.fillRect(-L/2+.5,-Wd/2+1.5,L,Wd);
+      for(const wx of[-L/2+2,-L/2+5,L/2-3.5]){R(wx,Wd/2-.3,1.8,.9,'#101416');R(wx,-Wd/2-.3,1.8,.9,'#101416')}
+      R(-L/2,-Wd/2,L-5,Wd,'#46523a');R(-L/2+.3,-Wd/2+.3,L-5.6,Wd-.6,'#5c6b4a');R(-L/2+.3,-Wd/2+.3,L-5.6,.6,'#8a9a72');R(-L/2+.3,Wd/2-.9,L-5.6,.6,'#3a4630');
+      for(let i=1;i<5;i++)R(-L/2+i*2.2,-Wd/2+.5,.4,Wd-1,'rgba(0,0,0,.25)');
+      if(load>0){R(-L/2+1,-Wd/2+1.6,L-7,.8,'rgba(232,201,160,.8)')}
+      R(L/2-5,-Wd/2+.4,5,Wd-.8,'#2f3a28');R(L/2-5,-Wd/2+.4,5,.5,'#6f8a58');R(L/2-2.4,-Wd/2+1,1.6,Wd-2,'#16222c');R(L/2-2.4,-Wd/2+1,1.6,.4,'rgba(170,225,245,.6)');
+      R(L/2-.5,-Wd/2+.6,.5,.9,'#fff4c0');R(L/2-.5,Wd/2-1.5,.5,.9,'#fff4c0');R(-L/2,-Wd/2+.6,.5,.9,'#ff3b2f');R(-L/2,Wd/2-1.5,.5,.9,'#ff3b2f');
+      X.save();X.globalCompositeOperation='lighter';const g=X.createLinearGradient(L/2,0,L/2+10,0);g.addColorStop(0,'rgba(255,240,170,'+(.2+.16*(night||0))+')');g.addColorStop(1,'rgba(255,240,170,0)');X.fillStyle=g;X.beginPath();X.moveTo(L/2,-Wd/2+.8);X.lineTo(L/2+10,-Wd/2-2.5);X.lineTo(L/2+10,Wd/2+2.5);X.lineTo(L/2,Wd/2-.8);X.closePath();X.fill();X.restore();
+      X.restore()},
     // кольцо вспышки заражения: два контура и искры
     ring(x,y,u,red){const c=red?'255,96,80':'125,255,166',r1=6+u*28;X.strokeStyle='rgba('+c+','+(1-u).toFixed(2)+')';X.lineWidth=1.5;X.beginPath();X.ellipse(x,y,r1,r1*.55,0,0,6.3);X.stroke();
       X.lineWidth=.8;X.beginPath();X.ellipse(x,y,r1*.62,r1*.34,0,0,6.3);X.stroke();
