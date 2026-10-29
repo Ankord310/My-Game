@@ -34,7 +34,7 @@ const Story={
   afterS3:()=>{
     const ok=G.contain3,sc=clamp((G.s3||0)/2600*55+(ok?30:0)+G.support*.15-(G.s3k||0)/40-G.bridges*3,0,100),gr=gradeBy(sc);
     return[
-      {img:'bridge',fx:'embers',res:{k:'ИТОГИ ЭТАПА 03 · ВОЕННЫЙ',grade:gr,rows:[['Эвакуировано',G.s3||0,clamp((G.s3||0)/2600,0,1),'g'],['Погибло мирных',G.s3k||0,clamp((G.s3k||0)/600,0,1),'r'],['Поддержка',Math.round(G.support)+'%',G.support/100,G.support<25?'r':'a'],['Заражение центра',Math.round((G.epiInf||0)*100)+'%',G.epiInf||0,'r'],['Мостов взорвано',G.bridges,clamp(G.bridges/3,0,1),'a']],
+      {img:'bridge',fx:'embers',res:{k:'ИТОГИ ЭТАПА 03 · ВОЕННЫЙ',grade:gr,rows:[['Эвакуировано',G.s3||0,clamp((G.s3||0)/2600,0,1),'g'],['Погибло мирных',G.s3k||0,clamp((G.s3k||0)/600,0,1),'r'],['Доверие',Math.round(G.support)+'%',G.support/100,G.support<25?'r':'a'],['Заражение центра',Math.round((G.epiInf||0)*100)+'%',G.epiInf||0,'r'],['Мостов взорвано',G.bridges,clamp(G.bridges/3,0,1),'a']],
         notes:[ok?'Центр удержан. Город дышит.':'Центр потерян: кризис выходит на уровень страны.',(G.s3k||0)>150?'Жестокие приказы дорого обошлись доверию людей.':'Потери среди мирных остались небольшими.']}},
       ok?{img:'country',fx:'scan',tag:'ЭТАП 03 · ВЫВОД',text:'Город удержан. На картах штаба — тихие районы, но координаты промзоны по-прежнему горят красным. Можно рискнуть и вернуться в «Эпицентр» — или передать кризис штабу.',choices:[{l:'Вернуться в «Эпицентр» (риск выше)',a:'raidI',d:'6|military',c:'pri'},{l:'Передать штабу',a:'intro4'}]}
         :{img:'country',fx:'scan red',tag:'ЭТАП 03 · ВЫВОД',text:'Город потерян. Заражение выходит за границы области: вопрос больше не в одном районе, а в судьбе всей страны.',choices:[{l:'Кризис национального уровня ▶',a:'intro4',c:'pri'}]}];
@@ -80,7 +80,7 @@ const Flow={
   clear(){Dlg.clear();if(Coach.on){Coach.on=false;Coach.st=null;$('#coach').style.display='none'}if(Slides.open)Slides.close(false);setMode(null);ctrl(false);panel(null);hud('');$('#prompt').style.display='none';$('#fat').style.opacity=0;screen('');$('#screen').classList.remove('tr');Tut.on=false;$('#tut').style.display='none';$('#help').style.display='none'},
   menu(){this.clear();setMode(Title);Title.home()},
   afterSci(){this.clear();if((G.bites||0)===0)Prog.ach('clean');Snd.play('op');Slides.play(Story.afterS1(),()=>ACT.go2())},
-  afterOp(){this.clear();G.support=clamp(60-G.losses*1.5,25,90);if(G.contain2&&(G.s2loss||0)<=4)Prog.ach('s2a');Slides.play(Story.afterS2(),null)},
+  afterOp(){this.clear();G.support=clamp(60-G.losses*1.5-Math.min(8,(G.s2waste||0)*1.5),25,90);if(G.contain2&&(G.s2loss||0)<=4)Prog.ach('s2a');Slides.play(Story.afterS2(),null)},
   afterMil(){this.clear();if(G.contain3&&!G.bridges)Prog.ach('bridges');if((G.s3||0)>2000)Prog.ach('s3big');Slides.play(Story.afterS3(),null)},
   raidIntro(n,role){this.clear();Snd.play('raid');Prog.raid();Prog.ach('raid');G.role=role;Slides.play(Story.raid(n,role),()=>{Maze.cfg={kind:'raid',diff:n};setMode(Maze)})},
   raidFail(){this.clear();card({img:'bunker',k:'РЕЙД ПРОВАЛЕН',t:'Группа не дошла до хранилища',p:['Планировка здания каждый раз новая. Попробуйте ещё раз — или вернитесь в меню.'],b:[{l:'Повторить рейд',a:'goRaid',d:String(Maze.cfg.diff),c:'pri'},{l:'В меню',a:'menu'}]})},
