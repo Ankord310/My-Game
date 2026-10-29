@@ -53,8 +53,8 @@ const Mil={
     else if(a==='heli'){if(s.med>0){say('Медики отказываются лететь ещё '+Math.ceil(s.med)+' с',2);return}
       if(s.heli>0||s.sup<25||s.t<25||o.k!=='d'){say(s.t<25?'Вертолёты будут через '+Math.ceil(25-s.t)+' с':s.sup<25?'Лётчики отказались: доверие слишком низкое':'Вертолёт ещё в рейсе',2);return}
       const load=Math.min(Math.round(60*(1-.25*this.nk())),Math.floor(o.pop*(1-o.inf)));if(load<=0)return;o.pop-=load;s.saved+=load;s.heli=Math.round(22*(1+.4*this.nk()));s.fxs.push({k:'heli',x0:o.x,y0:o.y,x1:MN[4].x,y1:MN[4].y,t:0,d:2.8,load});this.log('Вертолёт вывез '+load+' из '+o.nm);beep(700,.1);vib(20)}
-    else if(a==='art'){if(!s.esc||o.k!=='d')return;const k=Math.floor(o.pop*(1-o.inf)*.5);o.pop-=Math.floor(o.pop*.5);s.killed+=k;G.losses+=Math.ceil(k/20);o.inf*=.25;s.shake=.6;s.fxs.push({k:'boom',x:o.x,y:o.y,t:0,d:1.1});s.scars.push({x:o.x+rnd(-8,8),y:o.y+rnd(-6,6),r:15,t:0});s.sup=Math.max(0,s.sup-14);s.cruel+=1;G.cruelty+=1;this.pop(o.x,o.y-24,'погибли '+k,'#ff6b5c',1);this.log('Артудар по '+o.nm+': погибли мирные ('+k+')');say('Артиллерия: заражённых мало, но погибли и жители. Поддержка падает.',3.5);beep(90,.4,.08,'sawtooth');vib([80,40,120])}
-    else if(a==='bridge'){if(o.k!=='b'||o.dead)return;o.dead=1;o.blk=1;s.shake=.6;s.fxs.push({k:'boom',x:o.x,y:o.y,t:0,d:1.1});s.sup=Math.max(0,s.sup-6);s.cruel+=.5;G.bridges++;this.log(o.nm+' взорван');say('Мост разрушен: заражение не пройдёт, но и колонны тоже.',3);beep(70,.5,.09,'sawtooth');vib([100,50,140])}
+    else if(a==='art'){if(!s.esc||o.k!=='d')return;const k=Math.floor(o.pop*(1-o.inf)*.5);o.pop-=Math.floor(o.pop*.5);s.killed+=k;G.losses+=Math.ceil(k/20);o.inf*=.25;s.shake=.6;s.fxs.push({k:'boom',x:o.x,y:o.y,t:0,d:2.4,seed:(Math.random()*1000)|0});s.scars.push({x:o.x+rnd(-8,8),y:o.y+rnd(-6,6),r:15,t:0});s.sup=Math.max(0,s.sup-14);s.cruel+=1;G.cruelty+=1;this.pop(o.x,o.y-24,'погибли '+k,'#ff6b5c',1);this.log('Артудар по '+o.nm+': погибли мирные ('+k+')');say('Артиллерия: заражённых мало, но погибли и жители. Поддержка падает.',3.5);beep(90,.4,.08,'sawtooth');vib([80,40,120])}
+    else if(a==='bridge'){if(o.k!=='b'||o.dead)return;o.dead=1;o.blk=1;s.shake=.6;s.fxs.push({k:'boom',x:o.x,y:o.y,t:0,d:2.4,seed:(Math.random()*1000)|0});s.sup=Math.max(0,s.sup-6);s.cruel+=.5;G.bridges++;this.log(o.nm+' взорван');say('Мост разрушен: заражение не пройдёт, но и колонны тоже.',3);beep(70,.5,.09,'sawtooth');vib([100,50,140])}
     this.ui();
   },
   update(dt){
@@ -204,7 +204,7 @@ const Mil={
     // заражение: мягкая дымка по районам
     this.haze.render(cx,s.n.map(o=>o.k==='s'?Math.min(1,o.inf*3):o.inf),tm,{a:.6});
     // выжженные места
-    for(const q of s.scars){const a=clamp(1-q.t/40,0,1)*.55;cx.fillStyle='rgba(8,6,6,'+a+')';cx.beginPath();cx.ellipse(q.x,q.y,q.r,q.r*.7,0,0,TAU);cx.fill();if(q.t<14){cx.save();cx.globalCompositeOperation='lighter';for(let k=0;k<7;k++)if(Math.sin(tm*6+k*2.3+q.x)>.2){cx.fillStyle='rgba(255,120,40,.55)';cx.fillRect(q.x+Math.cos(k*2.1)*q.r*.6,q.y+Math.sin(k*2.1)*q.r*.4,1,1)}cx.restore()}}
+    for(const q of s.scars){const a=clamp(1-q.t/40,0,1)*.6,gr=cx.createRadialGradient(q.x,q.y,0,q.x,q.y,q.r);gr.addColorStop(0,'rgba(4,3,3,'+a.toFixed(3)+')');gr.addColorStop(.7,'rgba(16,10,8,'+(a*.8).toFixed(3)+')');gr.addColorStop(1,'rgba(20,12,10,0)');cx.save();cx.translate(q.x,q.y);cx.scale(1,.7);cx.translate(-q.x,-q.y);cx.fillStyle=gr;cx.fillRect(q.x-q.r,q.y-q.r,q.r*2,q.r*2);cx.restore();if(q.t<14){cx.save();cx.globalCompositeOperation='lighter';for(let k=0;k<7;k++)if(Math.sin(tm*6+k*2.3+q.x)>.2){cx.fillStyle='rgba(255,120,40,.55)';cx.fillRect(q.x+Math.cos(k*2.1)*q.r*.6,q.y+Math.sin(k*2.1)*q.r*.4,1,1)}cx.restore()}}
     // заражённые на улицах и отряды (спрайты сортируются по глубине)
     const zs=[];
     for(const o of s.n){
@@ -217,19 +217,18 @@ const Mil={
     for(const o of s.n)if(o.k==='d')this.crisis(o,tm,dt,zs);
     zs.sort((a,b)=>a[0]-b[0]);for(const z of zs){if(z[2]<0)Art3.soldier(z[1],z[0],-z[2],tm,1,z[3]);else if(z[2]>=1e6)Art3.person(z[1],z[0],z[2]-1e6,tm,z[3]);else Art3.zombie(z[1],z[0],z[2],tm,true)}
     // автобусы, вертолёты, взрывы
+    for(const b of s.buses){if(!b.p)continue;cx.save();cx.setLineDash([2,3]);cx.lineDashOffset=-tm*14;cx.strokeStyle=b.back?'rgba(160,200,220,.3)':'rgba(255,208,103,.55)';cx.lineWidth=.9;cx.beginPath();cx.moveTo(b.x,b.y);for(let i=b.i+1;i<b.p.length;i++){const N=s.n[b.p[i]];cx.lineTo(N.x,N.y)}cx.stroke();cx.restore();
+      if(Math.random()<dt*10)s.smoke.push({x:b.x-b.dx*7+rnd(-1,1),y:b.y-b.dy*7+rnd(-1,1),v:rnd(2,5),l:0,m:rnd(.5,1)})}
     for(const b of s.buses)Art3.bus(b.x,b.y,b.dx,b.dy,b.load,tm,this.nk());
     for(const f of s.fxs){
       if(f.k==='heli'){const u=f.t/f.d,x=f.x0+(f.x1-f.x0)*u,y=f.y0+(f.y1-f.y0)*u,h=16*Math.sin(Math.min(1,u)*Math.PI)+3;
         cx.fillStyle='rgba(0,0,0,.35)';cx.beginPath();cx.ellipse(x+h*.3,y+2,8,3,0,0,TAU);cx.fill();Art3.heli(x,y-h,tm,this.nk())}
-      else if(f.k==='boom'){const u=f.t/f.d;
-        cx.strokeStyle='rgba(255,'+Math.floor(200-u*120)+',60,'+(1-u).toFixed(2)+')';cx.lineWidth=3;cx.beginPath();cx.ellipse(f.x,f.y,6+u*30,(6+u*30)*.7,0,0,TAU);cx.stroke();
-        const g=cx.createRadialGradient(f.x,f.y-4,1,f.x,f.y-4,14*(1-u*.5)+4);g.addColorStop(0,'rgba(255,240,190,'+(1-u).toFixed(2)+')');g.addColorStop(.5,'rgba(255,150,50,'+((1-u)*.7).toFixed(2)+')');g.addColorStop(1,'rgba(255,80,30,0)');cx.fillStyle=g;cx.fillRect(f.x-24,f.y-30,48,48);
-        for(let k=0;k<12;k++){const a=k*.52+f.x,r=u*36,hh=Math.sin(u*Math.PI)*14;cx.fillStyle=k%2?'#ffb040':'#666';cx.fillRect(f.x+Math.cos(a)*r,f.y+Math.sin(a)*r*.7-hh*(k%3)*.3,2,2)}}
-      else if(f.k==='ring'){const u=f.t/f.d;cx.strokeStyle=(f.red?'rgba(255,96,80,':'rgba(125,255,166,')+(1-u).toFixed(2)+')';cx.lineWidth=2;cx.beginPath();cx.ellipse(f.x,f.y,6+u*26,(6+u*26)*.55,0,0,TAU);cx.stroke()}}
+      else if(f.k==='boom')Art3.boom(f.x,f.y,f.t/f.d,f.seed)
+      else if(f.k==='ring')Art3.ring(f.x,f.y,f.t/f.d,f.red)}
     // дым над заражёнными районами
     for(const o of s.n)if(o.k==='d'&&o.inf>.3&&Math.random()<.12*o.inf)s.smoke.push({x:o.x+rnd(-26,26),y:o.y+rnd(-14,16),v:rnd(8,16),l:0,m:rnd(2.5,4.5)});
     for(const q of s.smoke){q.y-=q.v*dt;q.x+=Math.sin(q.l*2+q.y*.1)*.12;q.l+=dt}s.smoke=s.smoke.filter(q=>q.l<q.m);
-    for(const q of s.smoke){const a=Math.sin(q.l/q.m*3.14)*.3;cx.fillStyle='rgba(38,28,32,'+a.toFixed(3)+')';cx.beginPath();cx.arc(q.x,q.y,2+q.l*2.6,0,TAU);cx.fill()}
+    for(const q of s.smoke){const a=Math.sin(q.l/q.m*3.14)*.34,r=2+q.l*2.6,g=cx.createRadialGradient(q.x,q.y,0,q.x,q.y,r);g.addColorStop(0,'rgba(46,36,40,'+a.toFixed(3)+')');g.addColorStop(1,'rgba(46,36,40,0)');cx.fillStyle=g;cx.fillRect(q.x-r,q.y-r,r*2,r*2)}
     for(const o of s.n)if(o.k==='d'&&o.inf>.25)Post.glow(o.x,o.y,46,'255,70,50',.07*o.inf*(1+.3*Math.sin(tm*3+o.x)));
     // выбранный район: «голографический» барьер
     {const o=s.n[s.sel];if(o.k!=='b'){const R=Maps.D3[o.id],p=.5+.5*Math.sin(tm*3),hh=8,x0=R[0]+2,y0=R[1]+Math.max(0,22-R[1]),x1=R[2]-2,y1=R[3]-2;
