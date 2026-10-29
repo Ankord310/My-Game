@@ -75,9 +75,11 @@ const Snd={
   foot(v){this.n(.05,.28*(v||1),'lowpass',460,150,.8)},
   clank(){this.t('triangle',980,640,.06,.16);this.n(.05,.12,'highpass',4500,3000,.6)},
   crack(){this.n(.09,.55,'highpass',2400,1100,.8);this.t('square',2100,260,.06,.14)},
-  siren(){if(!this.ctx)return;const o=this.ctx.createOscillator(),g=this.ctx.createGain(),t=this.ctx.currentTime;o.type='sawtooth';
-    for(let i=0;i<8;i++)o.frequency.setValueAtTime(i%2?900:620,t+i*.22);g.gain.setValueAtTime(.2,t);g.gain.linearRampToValueAtTime(.2,t+1.4);g.gain.linearRampToValueAtTime(0,t+1.8);
+  siren(v){if(!this.ctx)return;v=v==null?1:v;const o=this.ctx.createOscillator(),g=this.ctx.createGain(),t=this.ctx.currentTime;o.type='sawtooth';
+    for(let i=0;i<8;i++)o.frequency.setValueAtTime(i%2?900:620,t+i*.22);g.gain.setValueAtTime(.2*v,t);g.gain.linearRampToValueAtTime(.2*v,t+1.4);g.gain.linearRampToValueAtTime(0,t+1.8);
     const fl=this.ctx.createBiquadFilter();fl.type='lowpass';fl.frequency.value=1800;o.connect(fl);fl.connect(g);g.connect(this.fx);o.start(t);o.stop(t+1.9)},
+  // крики толпы вдалеке: короткие всплески шума с «голосом»
+  panic(v){if(!this.ctx)return;for(let i=0;i<3;i++)this.nz(this.fx,this.ctx.currentTime+i*rnd(.1,.3),rnd(.18,.3),.16*v,'bandpass',rnd(900,1500),rnd(1400,2200),4);if(Math.random()<.5)this.groan(.4*v,110)},
   groan(v,p,big){
     if(!this.ctx||v<.04||this.groans>=3)return;const c=this.ctx,t=c.currentTime,d=big?rnd(1,1.3):rnd(.7,1.1),f=(p||90)*rnd(.9,1.15)*(big?1.25:1),o=c.createOscillator();
     o.type='sawtooth';o.frequency.setValueAtTime(f*1.25,t);o.frequency.exponentialRampToValueAtTime(f*.62,t+d);

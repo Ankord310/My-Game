@@ -17,7 +17,7 @@ const Mil={
     const n=MN.map(o=>({...o,inf:0,sq:0,blk:0,dead:0,cap:o.pop,dp:o.pop,di:0}));
     const L=G.fociLeft||0;n[1].inf=clamp(.30+.04*L,.30,.7);n[0].inf=n[2].inf=clamp(.04+.02*L,.04,.25);
     n.forEach(o=>{if(o.k==='d'){const R=Maps.D3[o.id];o.dots=Array.from({length:26},()=>({x:rnd(R[0]+8,R[2]-8),y:rnd(R[1]+8,R[3]-8),vx:rnd(-9,9),vy:rnd(-9,9),ph:rnd(0,6)}))}});
-    const s=this.s={fxs:[],shake:0,t:0,dur:200,n,sel:1,buses:[],saved:0,killed:0,sup:G.support,cruel:0,sqPool:3-((G.s2waste||0)>=6?1:0),med:0,medWarn:false,heli:0,log:[],end:false,hudT:0,esc:false,uiSig:'',smoke:[],scars:[],dsaved:0,flash:[],ob:26};
+    const s=this.s={fxs:[],shake:0,t:0,dur:200,n,sel:1,buses:[],saved:0,killed:0,sup:G.support,cruel:0,sqPool:3-((G.s2waste||0)>=6?1:0),med:0,medWarn:false,sirT:rnd(3,6),panT:2,heli:0,log:[],end:false,hudT:0,esc:false,uiSig:'',smoke:[],scars:[],dsaved:0,flash:[],ob:26};
     {const w2=G.s2waste||0;if(w2>=3)this.log('Штаб: службы измотаны ложными вызовами'+(w2>=6?' — отрядов меньше':''));
       if(G.support<40)this.log('Доверие людей низкое: медики могут отказаться работать')}
     ctrl(false);this.ui();this.hudUpd();this.lt=performance.now();if(Coach.need('s3'))this.coach();else say('Вы — командир. Эвакуируйте людей и сдерживайте заражённые районы.',4.5);
@@ -68,6 +68,12 @@ const Mil={
     else if(s.sup<30&&Math.random()<dt*.06*(1+(30-s.sup)/30)){s.med=16;this.log('Медики отказались выполнять приказы');say('Медики отказываются работать: доверие слишком низкое!',3);beep(150,.25,.06,'square');vib([60,40,60]);this.ui()}
     else if(s.sup<42&&!s.medWarn){s.medWarn=true;say('Медики ропщут: доверие людей падает.',2.6)}
     if(s.sup>=50)s.medWarn=false;
+    // паника в сильно заражённых районах: сирены и крики
+    {let mx=0;for(const o of s.n)if(o.k==='d'){mx=Math.max(mx,o.inf);
+        if(!o.pan&&o.inf>.5&&o.pop>0){o.pan=1;this.pop(o.x,o.y-30,'ПАНИКА','#ffb35c',1);this.log('Паника в районе '+o.nm);beep(260,.15,.05,'sawtooth')}
+        else if(o.pan&&o.inf<.4)o.pan=0}
+      s.sirT-=dt;if(s.sirT<=0){s.sirT=rnd(7,11);if(mx>.45)Snd.siren(clamp((mx-.4)*1.5,.3,1))}
+      s.panT-=dt;if(s.panT<=0){s.panT=rnd(2.5,4);if(mx>.35)Snd.panic(clamp((mx-.3)*1.6,.2,1))}}
     let blkPop=0;for(const o of s.n)if(o.k==='d'&&o.blk&&o.pop>0)blkPop++;s.sup=clamp(s.sup-blkPop*.04*dt,0,100);
     this.busTick(dt);
     for(const f of s.fxs)if(f.k==='heli'&&f.t+dt>=f.d&&!f.landed){f.landed=1;s.sup=Math.min(100,s.sup+1);this.pop(MN[4].x,MN[4].y-26,'+'+f.load,'#7dffa6',1);s.fxs.push({k:'ring',x:MN[4].x,y:MN[4].y,t:0,d:1.2})}
@@ -131,7 +137,7 @@ const Mil={
     else{const col=o.blk?'#e5c53b':'#4cc9c0';cx.strokeStyle=col;cx.lineWidth=1.2;cx.globalAlpha=.5+.3*Math.sin(t*3+i);cx.beginPath();cx.ellipse(o.x,o.y,12,5.5,0,0,TAU);cx.stroke();cx.globalAlpha=1}
     const x0=Math.round(px-w/2),y0=Math.round(py);
     cx.fillStyle=sel?'#fff':'rgba(140,190,210,.8)';cx.fillRect(Math.round(px),y0+h,1,Math.max(0,Math.round(o.y-y0-h-4)));
-    cx.fillStyle=sel?'rgba(12,28,40,.97)':'rgba(6,14,22,.9)';cx.fillRect(x0,y0,w,h);cx.strokeStyle=sel?'#fff':o.blk?'#e5a93b':'#3b8aa4';cx.lineWidth=sel?1.5:1;cx.strokeRect(x0+.5,y0+.5,w-1,h-1);
+    cx.fillStyle=sel?'rgba(12,28,40,.97)':'rgba(6,14,22,.9)';cx.fillRect(x0,y0,w,h);cx.strokeStyle=sel?'#fff':o.k==='d'&&o.pan?'rgba(255,'+Math.round(70+40*Math.sin(t*8))+',60,'+(.65+.3*Math.sin(t*8)).toFixed(2)+')':o.blk?'#e5a93b':'#3b8aa4';cx.lineWidth=sel||o.pan?1.5:1;cx.strokeRect(x0+.5,y0+.5,w-1,h-1);
     if(sel){cx.fillStyle='rgba(255,255,255,.09)';cx.fillRect(x0+1,y0+1,w-2,h-2)}
     if(o.k==='b'){txt(o.nm,px,y0+12,o.dead?'#ff8d82':'#eaf5fa',10,'center');return}
     txt(o.nm,px,y0+13,'#ffffff',11,'center');
@@ -140,6 +146,26 @@ const Mil={
     cx.fillStyle='#9fb3c0';cx.fillRect(x0+5,y0+18,3,3);cx.fillRect(x0+4,y0+21,5,5);txt(Math.round(o.dp),x0+12,y0+27,'#cfe0ea',10,'left');
     const ic=o.di>.5?'#ffb0a8':o.di>.25?'#ffd067':'#9fe8d6';txt(Math.round(o.di*100)+'%',x0+w-5,y0+27,ic,11,'right');
     cx.fillStyle='#0b1720';cx.fillRect(x0+2,y0+h-4,w-4,3);cx.fillStyle=o.di>.5?'#ff5b4d':o.di>.25?'#e5a93b':'#4cc9c0';cx.fillRect(x0+2,y0+h-4,Math.round((w-4)*clamp(o.di,0,1)),3);
+  },
+  // районы с высоким заражением: очаги пожаров, дым, бегущие в панике люди, мигалки
+  crisis(o,t,dt){
+    const s=this.s,c=clamp((o.inf-.3)/.45,0,1),R=Maps.D3[o.id],fx=o.cr||(o.cr={fires:[],run:[],ph:rnd(0,6)});
+    const nf=c>0?1+Math.floor(c*5):0,nr=Math.floor(c*8);
+    if(fx.fires.length<nf&&Math.random()<dt*1.2)fx.fires.push({x:rnd(R[0]+10,R[2]-10),y:rnd(Math.max(R[1],30)+8,R[3]-8),ph:rnd(0,6),sz:rnd(1.2,1.9)});
+    else if(fx.fires.length>nf&&Math.random()<dt*.5)fx.fires.pop();
+    if(fx.run.length<nr&&Math.random()<dt*1.5)fx.run.push({x:rnd(R[0]+8,R[2]-8),y:rnd(Math.max(R[1],30)+8,R[3]-8),a:rnd(0,TAU),v:rnd(16,26),ph:rnd(0,6)});
+    else if(fx.run.length>nr)fx.run.pop();
+    for(const f of fx.fires){const fl=.6+.4*Math.sin(t*14+f.ph)*Math.sin(t*9+f.ph*2),x=Math.round(f.x),y=Math.round(f.y),h=Math.round((3+2*fl)*f.sz);
+      cx.fillStyle='rgba(0,0,0,.4)';cx.fillRect(x-3,y,7,2);
+      cx.fillStyle='#d8431a';cx.fillRect(x-2,y-h+1,5,h);cx.fillStyle='#ff8a2a';cx.fillRect(x-1,y-h,3,h);cx.fillStyle='#ffd45a';cx.fillRect(x,y-h-1,1,Math.max(1,h-2));
+      Post.glow(f.x,f.y-3,15,'255,130,40',.35+.15*fl);
+      if(Math.random()<dt*.9)s.smoke.push({x:f.x+rnd(-2,2),y:f.y-h,v:rnd(10,18),l:0,m:rnd(2,3.5)})}
+    for(const r of fx.run){if(Math.random()<dt*1.4)r.a+=rnd(-1.6,1.6);r.x+=Math.cos(r.a)*r.v*dt;r.y+=Math.sin(r.a)*r.v*dt*.8;
+      if(r.x<R[0]+6||r.x>R[2]-6){r.a=Math.PI-r.a;r.x=clamp(r.x,R[0]+6,R[2]-6)}if(r.y<Math.max(R[1],30)+6||r.y>R[3]-6){r.a=-r.a;r.y=clamp(r.y,Math.max(R[1],30)+6,R[3]-6)}
+      const x=Math.round(r.x),y=Math.round(r.y),b=Math.floor(t*10+r.ph)%2;cx.fillStyle='rgba(0,0,0,.35)';cx.fillRect(x,y+2,3,1);cx.fillStyle='#e8d6a8';cx.fillRect(x,y-2+b,2,3);cx.fillStyle='#f4e8c8';cx.fillRect(x,y-3+b,2,1);
+      if(Math.sin(t*2.2+r.ph*3)>.93)otx('!',r.x,r.y-6,'#ff6b5c',8,'center')}
+    if(c>.25){const bx=R[0]+12,by=R[3]-8,on=Math.floor(t*4+fx.ph)%2;cx.fillStyle='#10161c';cx.fillRect(bx-4,by,9,3);cx.fillStyle=on?'#ff3b2f':'#3b6bff';cx.fillRect(bx-4,by-1,4,2);cx.fillStyle=on?'#3b6bff':'#ff3b2f';cx.fillRect(bx+1,by-1,4,2);
+      Post.glow(bx,by,14,on?'255,59,47':'59,107,255',.35)}
   },
   bus(b,t){
     const hz=Math.abs(b.dx)>=Math.abs(b.dy),w=hz?13:6,h=hz?6:13,x=Math.round(b.x-w/2),y=Math.round(b.y-h/2);
@@ -190,6 +216,7 @@ const Mil={
         cx.fillStyle='rgba(0,0,0,.4)';cx.fillRect(sx+1,sy+3,10,5);cx.fillStyle='#2c4a34';cx.fillRect(sx,sy+1,10,5);cx.fillStyle='#4a7a52';cx.fillRect(sx,sy,10,5);cx.fillStyle='#7aa884';cx.fillRect(sx,sy,10,1);cx.fillStyle='#16202a';cx.fillRect(sx+7,sy+1,2,3);
         for(let k=0;k<3;k++){cx.fillStyle='#1f2a22';cx.fillRect(sx+1+k*2,sy-2,1,2);cx.fillStyle='#d8c8a0';cx.fillRect(sx+1+k*2,sy-3,1,1)}
         if(o.inf>.08&&Math.floor(tm*7+q*3)%4===0){cx.save();cx.globalCompositeOperation='lighter';cx.strokeStyle='rgba(255,230,140,.85)';cx.beginPath();cx.moveTo(sx+10,sy+2);cx.lineTo(sx+10+(q%2?9:-30),sy+2-4+(q%3)*3);cx.stroke();cx.restore()}}}
+    for(const o of s.n)if(o.k==='d')this.crisis(o,tm,dt);
     // автобусы, вертолёты, взрывы
     for(const b of s.buses)this.bus(b,tm);
     for(const f of s.fxs){
