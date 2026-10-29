@@ -138,6 +138,14 @@ const Op={
       if(ip==null||inx==null)continue;
       const src=this.blocked(ip,inx)?ip:inx,N=ROAD.N[src],P=u.st==='go'?u.P:{x:ROAD.N[u.src].x,y:ROAD.N[u.src].y,a:u.src,b:u.src};
       u.path=[[u.x,u.y]].concat(this.route(src,P));u.pi=1}},
+  // маршрут и время прибытия каждой службы до выбранного вызова (с учётом перекрытий) — показываются до отправки
+  preview(c){const s=this.s,key=c.id+'|'+s.blocks.map(k=>k.a+'-'+k.b).join(','),pv=s.pv;if(pv&&pv.key===key)return pv.d;
+    const P=this.proj(c.x,c.y),d={},sv=['police','amb','fire','spec'],bl=s.blocks;
+    const len=pts=>{let L=0;for(let i=1;i<pts.length;i++)L+=Math.hypot(pts[i][0]-pts[i-1][0],pts[i][1]-pts[i-1][1]);return L};
+    for(const k of sv){const st=this.map.stn&&this.map.stn[k],src=st?st.node:ROAD.id['179,239'];
+      const path=this.route(src,P);s.blocks=[];const free=len(this.route(src,P));s.blocks=bl;
+      const e=Math.round(len(path)/USP),e0=Math.round(free/USP);d[k]={path,e,det:Math.max(0,e-e0)}}
+    s.pv={key,d};return d},
   proj(x,y){let best=null,bd=1e9;for(const[a,b]of ROAD.seg){const A=ROAD.N[a],B=ROAD.N[b];let px,py;
       if(A.y===B.y){px=clamp(x,Math.min(A.x,B.x),Math.max(A.x,B.x));py=A.y}else{px=A.x;py=clamp(y,Math.min(A.y,B.y),Math.max(A.y,B.y))}
       const d=Math.hypot(px-x,py-y);if(d<bd){bd=d;best={x:px,y:py,a,b}}}return best},
@@ -243,9 +251,9 @@ const Op={
   finish(){const s=this.s;s.end=true;G.fociLeft=s.foci.length;G.ok2=s.ok;G.fail2=s.fail;G.s2loss=s.losses;const ok=s.foci.length<=4&&s.losses<=14;G.contain2=ok;setTimeout(()=>Flow.afterOp(),400)},
   hudUpd(){const s=this.s,gm=s.t/s.dur*720,h=(18+Math.floor(gm/60))%24,m=Math.floor(gm%60);hud(`<b>02 ОПЕРАТОР</b><span class="ob">Смена ${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}</span><span class="r">потери ${Cnt.h('s2.loss',s.losses,'i')}</span><span class="a">очагов ${Cnt.h('s2.foci',s.foci.length,'i')}</span><span>${mmss(s.dur-s.t)}</span>`)},
   ui(soft){
-    const s=this.s,c=s.sel,cr=s.crew,lk=s.lock>0;let eta=0;
+    const s=this.s,c=s.sel,cr=s.crew,lk=s.lock>0;let eta=0;const pv=c&&!c.asg&&s.calls.includes(c)?this.preview(c):null;
     if(c&&c.asg){const u=s.units.find(q=>q.c===c&&q.st==='go');if(u)eta=Math.ceil(this.left(u)/u.sp)}
-    const sig=JSON.stringify([cr,lk,!!s.spec,s.specMax,Math.round(s.fat/2),c&&[c.id,c.clar,c.cl>0,c.asg,eta]]).concat(s.log.join());
+    const sig=JSON.stringify([cr,lk,!!s.spec,s.specMax,Math.round(s.fat/2),c&&[c.id,c.clar,c.cl>0,c.asg,eta],pv&&Object.keys(pv).map(k=>pv[k].e+'/'+pv[k].det)]).concat(s.log.join());
     if(soft&&this._sig===sig)return;this._sig=sig;
     const sv=(k,max)=>`<div class="cw" style="--c:${SVC[k].c}"><b>${SVC[k].s}</b><div class="pips">${Array.from({length:max},(_,i)=>`<u class="${i<cr[k]?'':'o'}"></u>`).join('')}</div></div>`;
     let h=`<div class="ph"><b>ДИСПЕТЧЕР</b><span class="chip ${s.fat>80?'r':s.fat>55?'a':''}">усталость ${Cnt.h('s2.fat',clamp(s.fat,0,100),'p')}</span></div>`;
@@ -256,7 +264,7 @@ const Op={
       if(c.asg)h+=`<div class="m" style="color:#4cc9c0;margin:.2rem 0 .4rem">Экипаж в пути · прибытие через ${Cnt.h('s2.eta',eta,'i',' с')}</div>`;
       else{
         h+=`<div class="r2"><button class="pb warn" data-a="op_cl" ${c.clar||c.cl>0||lk?'disabled':''}><span class="bd" style="--c:#e5c53b">?</span><span class="tx">${c.cl>0?'Уточняю…':c.clar?'Уточнено':'Уточнить'}</span></button><button class="pb" data-a="op_ign"><span class="bd" style="--c:#7f98a8">✕</span><span class="tx">Игнор</span></button></div>`;
-        const sb=k=>{const off=lk||cr[k]<=0||(k==='spec'&&!s.spec);return`<button class="pb svc" style="--c:${SVC[k].c}" data-a="op_${k}" ${off?'disabled':''}><span class="bd">${SVC[k].ic}</span><span class="tx">${SVC[k].n}</span></button>`};
+        const sb=k=>{const off=lk||cr[k]<=0||(k==='spec'&&!s.spec);return`<button class="pb svc" style="--c:${SVC[k].c}" data-a="op_${k}" ${off?'disabled':''}><span class="bd">${SVC[k].ic}</span><span class="tx">${SVC[k].n}${pv&&!off?`<small${pv[k].det>=2?' style="color:#ffb35c"':''}>≈ ${pv[k].e} с${pv[k].det>=2?' · +'+pv[k].det+' с':''}</small>`:''}</span></button>`};
         h+=`<div class="r2">${sb('police')}${sb('amb')}</div><div class="r2">${sb('fire')}${sb('spec')}</div>`}
     }else h+=`<div class="m" style="margin:.4rem 0 .6rem">Выберите метку вызова на карте. Неясный звонок можно уточнить.</div>`;
     h+=`<button class="pb ${c&&!c.asg?'':'glow'}" data-a="op_coffee" ${lk?'disabled':''} style="${c&&!c.asg?'':'animation:none'}"><span class="bd" style="--c:#c28a4a">☕</span><span class="tx">Кофе<small>снимает усталость, 4 с без связи</small></span></button><div class="log">${s.log.slice(0,2).map((x,i)=>`<div data-key="L${(s.logN||0)-i}">${x}</div>`).join('')}</div>`;
@@ -377,6 +385,10 @@ const Op={
       for(let i=0;i<(hz?h:w);i+=2){cx.fillStyle=(i/2)%2?'#f2f2f2':'#e8432f';if(hz)cx.fillRect(bx,by+i,w,2);else cx.fillRect(bx+i,by,2,h)}
       Post.glow(mx,my,10,'255,120,60',.25+.1*Math.sin(t*6));
       cx.fillStyle='rgba(0,0,0,.5)';cx.fillRect(Math.round(mx)-7,Math.round(my)+8,14,2);cx.fillStyle='#ff8a3a';cx.fillRect(Math.round(mx)-7,Math.round(my)+8,14*pr,2)}
+    // предпросмотр: пути служб до выбранного вызова
+    if(s.sel&&!s.sel.asg&&s.calls.includes(s.sel)&&!s.cut){const pv=this.preview(s.sel);
+      for(const k in pv){if(s.crew[k]<=0||(k==='spec'&&!s.spec))continue;const q=pv[k].path;
+        cx.save();cx.setLineDash([2,4]);cx.lineDashOffset=-t*14;cx.strokeStyle=SVC[k].c;cx.globalAlpha=.8;cx.lineWidth=1.6;cx.beginPath();q.forEach((p,i)=>i?cx.lineTo(p[0],p[1]):cx.moveTo(p[0],p[1]));cx.stroke();cx.restore()}}
     // маршруты и машины служб (по улицам, по правой полосе)
     for(const u of s.units){if(u.pi>=u.path.length)continue;const col=SVC[u.svc].c;
       cx.save();cx.setLineDash([3,4]);cx.lineDashOffset=-t*22;cx.strokeStyle=col;cx.globalAlpha=u.st==='go'?.6:.25;cx.lineWidth=1;cx.beginPath();cx.moveTo(u.x,u.y);for(let i=u.pi;i<u.path.length;i++)cx.lineTo(u.path[i][0],u.path[i][1]);cx.stroke();cx.restore();
