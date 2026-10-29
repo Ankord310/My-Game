@@ -382,13 +382,14 @@ Maps.cityStrip=function(kind,w,K){
 
 // ---------------------------------------------------------------- этап 4: объёмная карта страны
 // RG — центры округов [{x,y}], RE — связи [[a,b]]. Регионы 0..n-1 — наша страна, n — союзник (запад), n+1 — противник (восток).
-Maps.country=function(RG,RE,ex){
-  ex=ex|0;RG=RG.map(p=>({x:p.x+ex,y:p.y}));
-  const W=330+ex,H=270,N=RG.length,AL=N,EN=N+1,NR=N+2,sz=W*H,rn=mulberry(9);
+Maps.country=function(RG,RE,ex,K){
+  K=K||1;ex=ex|0;RG=RG.map(p=>({x:p.x+ex,y:p.y}));
+  const W=330+ex,H=270,Wd=W*K,Hd=H*K,N=RG.length,AL=N,EN=N+1,NR=N+2,sz=Wd*Hd,rn=mulberry(9);
   const hgt=new Float32Array(sz),reg=new Uint8Array(sz).fill(255),land=new Uint8Array(sz);
+  const ix=(x,y)=>Math.max(0,Math.min(Hd-1,Math.round(y*K)))*Wd+Math.max(0,Math.min(Wd-1,Math.round(x*K))),Ld=(x,y)=>land[ix(x,y)],Rg=(x,y)=>reg[ix(x,y)],Hg=(x,y)=>hgt[ix(x,y)];
   const PK=[[140,50,30,1],[250,82,26,.95],[70,150,24,.75],[205,150,20,.5],[296,205,26,.85],[22,112,22,.6],[120,238,18,.5]];
-  for(let y=0;y<H;y++)for(let x=0;x<W;x++){
-    const k=y*W+x,wx=(Maps.fbm(x*.035,y*.035,11)-.5)*30,wy=(Maps.fbm(x*.035+40,y*.035+40,12)-.5)*30;
+  for(let yy=0;yy<Hd;yy++)for(let xx=0;xx<Wd;xx++){
+    const x=xx/K,y=yy/K,k=yy*Wd+xx,wx=(Maps.fbm(x*.035,y*.035,11)-.5)*30,wy=(Maps.fbm(x*.035+40,y*.035+40,12)-.5)*30;
     const bd=Math.pow((x-ex-157)/116,2)+Math.pow((y-141)/108,2)+(Maps.fbm(x*.045,y*.045,5)-.5)*.55;
     const ad=Math.pow((x-ex+26)/70,2)+Math.pow((y-145)/104,2)+(Maps.fbm(x*.05,y*.05,6)-.5)*.4,ed=Math.pow((x-ex-352)/80,2)+Math.pow((y-142)/102,2)+(Maps.fbm(x*.05+9,y*.05,7)-.5)*.4;
     if(ad<1){reg[k]=AL;land[k]=1}else if(ed<1){reg[k]=EN;land[k]=1}
@@ -397,40 +398,40 @@ Maps.country=function(RG,RE,ex){
     hgt[k]=Math.min(1.2,Maps.fbm(x*.02,y*.02,3)*.55+m*.5)}
   // --- океан: глубина от береговой линии
   const bl=new Float32Array(sz),tmp=new Float32Array(sz);for(let i=0;i<sz;i++)bl[i]=land[i];
-  for(let pass=0;pass<2;pass++){const R=6;
-    for(let y=0;y<H;y++){let s=0;for(let x=-R;x<=R;x++)s+=bl[y*W+Math.max(0,Math.min(W-1,x))];for(let x=0;x<W;x++){tmp[y*W+x]=s/(2*R+1);s+=bl[y*W+Math.min(W-1,x+R+1)]-bl[y*W+Math.max(0,x-R)]}}
-    for(let x=0;x<W;x++){let s=0;for(let y=-R;y<=R;y++)s+=tmp[Math.max(0,Math.min(H-1,y))*W+x];for(let y=0;y<H;y++){bl[y*W+x]=s/(2*R+1);s+=tmp[Math.min(H-1,y+R+1)*W+x]-tmp[Math.max(0,y-R)*W+x]}}}
-  const c=Maps.mk(W,H),g=c.getContext('2d'),oc=g.createImageData(W,H),od=oc.data;
-  for(let y=0;y<H;y++)for(let x=0;x<W;x++){const k=y*W+x,q=k*4,t=1-Math.min(1,bl[k]*2.4),st=(Maps.vn(x*.05,y*.3,9)-.5)*8+(Maps.hash(x,y,3)-.5)*4;
+  for(let pass=0;pass<2;pass++){const R=6*K;
+    for(let y=0;y<Hd;y++){let s=0;for(let x=-R;x<=R;x++)s+=bl[y*Wd+Math.max(0,Math.min(Wd-1,x))];for(let x=0;x<Wd;x++){tmp[y*Wd+x]=s/(2*R+1);s+=bl[y*Wd+Math.min(Wd-1,x+R+1)]-bl[y*Wd+Math.max(0,x-R)]}}
+    for(let x=0;x<Wd;x++){let s=0;for(let y=-R;y<=R;y++)s+=tmp[Math.max(0,Math.min(Hd-1,y))*Wd+x];for(let y=0;y<Hd;y++){bl[y*Wd+x]=s/(2*R+1);s+=tmp[Math.min(Hd-1,y+R+1)*Wd+x]-tmp[Math.max(0,y-R)*Wd+x]}}}
+  const c=Maps.mk(Wd,Hd),g=c.getContext('2d'),oc=g.createImageData(Wd,Hd),od=oc.data;c.K=K;
+  for(let yy=0;yy<Hd;yy++)for(let xx=0;xx<Wd;xx++){const x=xx/K,y=yy/K,k=yy*Wd+xx,q=k*4,t=1-Math.min(1,bl[k]*2.4),st=(Maps.vn(x*.05,y*.3,9)-.5)*8+(Maps.hash(xx,yy,3)-.5)*4;
     let r=28+(6-28)*t+st*.4,gg=112+(34-112)*t+st*.7,b=134+(50-134)*t+st;
     const cl=bl[k]*9,ln=Math.abs(cl-Math.round(cl));if(ln<.05&&!land[k]){r+=10;gg+=16;b+=18}
     od[q]=r;od[q+1]=gg;od[q+2]=b;od[q+3]=255}
   g.putImageData(oc,0,0);
   // --- верхняя поверхность: рельеф, цвета округов, границы
   const PALS=[['#3a5a52','#8a948c'],['#2f5c44','#a2aaa2'],['#3a6c44','#8c9a88'],['#5c643a','#a69a82'],['#62743e','#aaa68a'],['#3a6a5c','#8aa098'],['#3a6478','#a0b4c0'],['#6e4a40','#b09a90']];
-  const top=Maps.mk(W,H),tg=top.getContext('2d'),ti=tg.createImageData(W,H),td=ti.data;
-  const H0=(x,y)=>hgt[Math.max(0,Math.min(H-1,y))*W+Math.max(0,Math.min(W-1,x))];
-  for(let y=0;y<H;y++)for(let x=0;x<W;x++){const k=y*W+x;if(!land[k])continue;const q=k*4,r=reg[k],P=PALS[r];
+  const top=Maps.mk(Wd,Hd),tg=top.getContext('2d'),ti=tg.createImageData(Wd,Hd),td=ti.data;top.K=K;
+  const H0=(x,y)=>hgt[Math.max(0,Math.min(Hd-1,y))*Wd+Math.max(0,Math.min(Wd-1,x))];
+  for(let yy=0;yy<Hd;yy++)for(let xx=0;xx<Wd;xx++){const x=xx/K,y=yy/K,k=yy*Wd+xx;if(!land[k])continue;const q=k*4,r=reg[k],P=PALS[r];
     const h=hgt[k],t=Maps.sstep(.38,.95,h),A=Maps.rgb(P[0]),B=Maps.rgb(P[1]);
-    const sh=.7+((H0(x+1,y)-H0(x-1,y))+(H0(x,y+1)-H0(x,y-1)))*3.2;
-    const n=(Maps.vn(x*.2,y*.2,13)-.5)*.14+(Maps.hash(x,y,5)-.5)*.06;
+    const sh=.7+((H0(xx+1,yy)-H0(xx-1,yy))+(H0(xx,yy+1)-H0(xx,yy-1)))*3.2*K;
+    const n=(Maps.vn(x*.2,y*.2,13)-.5)*.14+(Maps.hash(xx,yy,5)-.5)*.06;
     let cr=A[0]+(B[0]-A[0])*t,cg=A[1]+(B[1]-A[1])*t,cb=A[2]+(B[2]-A[2])*t;
     if(h>.9){const s2=Maps.sstep(.9,1.1,h);cr+=(235-cr)*s2;cg+=(240-cg)*s2;cb+=(245-cb)*s2}
     const forest=r<N&&Maps.fbm(x*.08,y*.08,21)>.6&&h<.5;if(forest){cr*=.72;cg*=.86;cb*=.74}
-    let coast=false;for(let d=1;d<=2&&!coast;d++)if(!land[k-d]||!land[k+d]||!land[k-d*W]||!land[k+d*W])coast=true;
+    let coast=false;for(let d=1;d<=2*K&&!coast;d++)if(!land[k-d]||!land[k+d]||!land[k-d*Wd]||!land[k+d*Wd])coast=true;
     if(coast&&h<.3){cr=cr*.5+112*.5;cg=cg*.5+118*.5;cb=cb*.5+86*.5}
     const f=Math.max(.45,Math.min(1.5,sh+n));td[q]=Math.min(255,cr*f);td[q+1]=Math.min(255,cg*f);td[q+2]=Math.min(255,cb*f);td[q+3]=255;
-    const ri=k+1,di=k+W;if((x<W-1&&land[ri]&&reg[ri]!==r)||(y<H-1&&land[di]&&reg[di]!==r)){td[q]*=.45;td[q+1]*=.5;td[q+2]*=.55}}
-  tg.putImageData(ti,0,0);
+    const ri=k+1,di=k+Wd;if((xx<Wd-1&&land[ri]&&reg[ri]!==r)||(yy<Hd-1&&land[di]&&reg[di]!==r)){td[q]*=.45;td[q+1]*=.5;td[q+2]*=.55}}
+  tg.putImageData(ti,0,0);tg.setTransform(K,0,0,K,0,0);tg.K=K;
   // --- реки и озёра
   const river=(x0,y0)=>{let x=x0,y=y0;tg.strokeStyle='#2a86a8';tg.lineWidth=1.6;tg.beginPath();tg.moveTo(x,y);
-    for(let i=0;i<260;i++){const gx=H0(Math.round(x+2),Math.round(y))-H0(Math.round(x-2),Math.round(y)),gy=H0(Math.round(x),Math.round(y+2))-H0(Math.round(x),Math.round(y-2));
-      const nx=Maps.vn(x*.1,y*.1,31)-.5,ny=Maps.vn(x*.1+7,y*.1,32)-.5;x+=-gx*8+nx*2.2+.25;y+=-gy*8+ny*2.2+.25;if(x<1||y<1||x>=W-1||y>=H-1||!land[Math.round(y)*W+Math.round(x)])break;tg.lineTo(x,y)}
+    for(let i=0;i<260;i++){const gx=Hg(Math.round(x+2),Math.round(y))-Hg(Math.round(x-2),Math.round(y)),gy=Hg(Math.round(x),Math.round(y+2))-Hg(Math.round(x),Math.round(y-2));
+      const nx=Maps.vn(x*.1,y*.1,31)-.5,ny=Maps.vn(x*.1+7,y*.1,32)-.5;x+=-gx*8+nx*2.2+.25;y+=-gy*8+ny*2.2+.25;if(x<1||y<1||x>=W-1||y>=H-1||!Ld(x,y))break;tg.lineTo(x,y)}
     tg.stroke()};
   for(const p of[[141,54],[250,86],[72,150],[205,152]])river(p[0]+ex,p[1]);
-  for(const L of[[118,160,9,5],[206,58,8,4],[58,200,7,4]].map(a=>[a[0]+ex,a[1],a[2],a[3]])){if(!land[L[1]*W+L[0]])continue;tg.fillStyle='#1c6a86';tg.beginPath();tg.ellipse(L[0],L[1],L[2],L[3],0,0,6.3);tg.fill();tg.strokeStyle='rgba(190,235,245,.55)';tg.lineWidth=1;tg.stroke()}
+  for(const L of[[118,160,9,5],[206,58,8,4],[58,200,7,4]].map(a=>[a[0]+ex,a[1],a[2],a[3]])){if(!Ld(L[0],L[1]))continue;tg.fillStyle='#1c6a86';tg.beginPath();tg.ellipse(L[0],L[1],L[2],L[3],0,0,6.3);tg.fill();tg.strokeStyle='rgba(190,235,245,.55)';tg.lineWidth=1;tg.stroke()}
   // --- поля
-  for(const f of[[104,224,18,10],[128,232,14,8],[84,196,16,9],[200,226,16,10],[238,170,14,9],[246,236,12,8]].map(a=>[a[0]+ex,a[1],a[2],a[3]])){if(!land[(f[1]+4)*W+f[0]+4])continue;for(let i=0;i<f[3];i+=2){tg.fillStyle=(i/2)%2?'rgba(196,184,90,.55)':'rgba(120,150,70,.55)';tg.fillRect(f[0],f[1]+i,f[2],2)}tg.strokeStyle='rgba(0,0,0,.2)';tg.strokeRect(f[0]+.5,f[1]+.5,f[2]-1,f[3]-1)}
+  for(const f of[[104,224,18,10],[128,232,14,8],[84,196,16,9],[200,226,16,10],[238,170,14,9],[246,236,12,8]].map(a=>[a[0]+ex,a[1],a[2],a[3]])){if(!Ld(f[0]+4,f[1]+4))continue;for(let i=0;i<f[3];i+=2){tg.fillStyle=(i/2)%2?'rgba(196,184,90,.55)':'rgba(120,150,70,.55)';tg.fillRect(f[0],f[1]+i,f[2],2)}tg.strokeStyle='rgba(0,0,0,.2)';tg.strokeRect(f[0]+.5,f[1]+.5,f[2]-1,f[3]-1)}
   // --- дороги между округами
   const road=(A,B,col,w)=>{const mx=(A.x+B.x)/2,my=(A.y+B.y)/2,dx=B.x-A.x,dy=B.y-A.y,L=Math.hypot(dx,dy)||1,off=(Maps.vn(mx*.1,my*.1,41)-.5)*L*.35;
     tg.strokeStyle='rgba(8,14,16,.65)';tg.lineWidth=w+1.6;tg.beginPath();tg.moveTo(A.x,A.y);tg.quadraticCurveTo(mx-dy/L*off,my+dx/L*off,B.x,B.y);tg.stroke();
@@ -440,8 +441,8 @@ Maps.country=function(RG,RE,ex){
   // --- деревья, горы, города
   const rr=mulberry(77),GREEN=['#143c28','#2a6a44'];
   const tree=(x,y,s)=>{tg.fillStyle='rgba(0,0,0,.28)';tg.fillRect(x+1,y,s+1,1);tg.fillStyle=GREEN[0];tg.beginPath();tg.moveTo(x,y-s*2-1);tg.lineTo(x-s,y);tg.lineTo(x+s,y);tg.fill();tg.fillStyle=GREEN[1];tg.beginPath();tg.moveTo(x,y-s*2-1);tg.lineTo(x-s,y);tg.lineTo(x,y);tg.fill()};
-  for(let i=0;i<1400;i++){const x=(rr()*W)|0,y=(rr()*H)|0,k=y*W+x;if(!land[k]||reg[k]>=N||hgt[k]>.5)continue;if(Maps.fbm(x*.08,y*.08,21)<.6)continue;tree(x,y,1+(rr()<.3?1:0))}
-  const pk=[];for(let i=0;i<1500&&pk.length<24;i++){const x=(rr()*W)|0,y=(rr()*H)|0,k=y*W+x;if(!land[k]||hgt[k]<.64)continue;if(pk.some(p=>Math.hypot(p[0]-x,p[1]-y)<12))continue;pk.push([x,y,6+(hgt[k]-.6)*17])}
+  for(let i=0;i<2600;i++){const x=(rr()*W)|0,y=(rr()*H)|0;if(!Ld(x,y)||Rg(x,y)>=N||Hg(x,y)>.5)continue;if(Maps.fbm(x*.08,y*.08,21)<.6)continue;tree(x,y,1+(rr()<.3?1:0))}
+  const pk=[];for(let i=0;i<1500&&pk.length<24;i++){const x=(rr()*W)|0,y=(rr()*H)|0;if(!Ld(x,y)||Hg(x,y)<.64)continue;if(pk.some(p=>Math.hypot(p[0]-x,p[1]-y)<12))continue;pk.push([x,y,6+(Hg(x,y)-.6)*17])}
   pk.sort((a,b)=>a[1]-b[1]);
   for(const p of pk){const x=p[0],y=p[1],s=p[2];tg.fillStyle='rgba(0,0,0,.3)';tg.beginPath();tg.moveTo(x+s*.4,y+1);tg.lineTo(x+s*1.5,y+2);tg.lineTo(x+s*.3,y-s*.4);tg.fill();
     tg.fillStyle='#8e9aa2';tg.beginPath();tg.moveTo(x,y-s);tg.lineTo(x-s*.8,y);tg.lineTo(x,y);tg.fill();tg.fillStyle='#4e5a64';tg.beginPath();tg.moveTo(x,y-s);tg.lineTo(x,y);tg.lineTo(x+s*.8,y);tg.fill();
@@ -449,35 +450,35 @@ Maps.country=function(RG,RE,ex){
   const town=(x,y,n,col,ht,rs)=>{const items=[];for(let i=0;i<n;i++){const a=i*2.4+rs,r=2+i*1.7,bx=x+Math.cos(a)*r*1.5-3,by=y+Math.sin(a)*r*.9-2,w=5+((rr()*3)|0),h=4+((rr()*2)|0);items.push([bx,by,w,h,ht*(.5+rr()*.9)])}
     items.sort((a,b)=>a[1]-b[1]);for(const b of items)Maps.shadow(tg,b[0],b[1],b[2],b[3],b[4],.3);for(const b of items)Maps.box(tg,b[0],b[1],b[2],b[3],b[4],{c:col,rn:rr,lit:.5,roof:'flat'})};
   RG.forEach((p,i)=>{if(i===0){tg.strokeStyle='rgba(200,215,225,.3)';tg.lineWidth=1;tg.beginPath();tg.ellipse(p.x,p.y+2,22,14,0,0,6.3);tg.stroke();town(p.x,p.y,10,'#86aac4',7,.5)}else town(p.x,p.y,6,'#7096b0',4,i)});
-  for(let i=0;i<14;i++){const x=(rr()*W)|0,y=(rr()*H)|0,k=y*W+x;if(!land[k]||hgt[k]>.5||reg[k]>=N)continue;if(RG.some(p=>Math.hypot(p.x-x,p.y-y)<26))continue;town(x,y,3,'#6e88a0',3,i)}
-  for(let i=0;i<10;i++){const x=(rr()*(60+ex)+8)|0,y=(rr()*190+50)|0,k=y*W+x;if(land[k]&&reg[k]===AL&&(i%2||true)){town(x,y,3,'#5f94b4',4,i)}}
-  for(let i=0;i<8;i++){const x=(300+ex+rr()*25)|0,y=(rr()*180+50)|0,k=y*W+x;if(land[k]&&reg[k]===EN)town(x,y,3,'#9a5a54',4,i)}
+  for(let i=0;i<14;i++){const x=(rr()*W)|0,y=(rr()*H)|0;if(!Ld(x,y)||Hg(x,y)>.5||Rg(x,y)>=N)continue;if(RG.some(p=>Math.hypot(p.x-x,p.y-y)<26))continue;town(x,y,3,'#6e88a0',3,i)}
+  for(let i=0;i<10;i++){const x=(rr()*(60+ex)+8)|0,y=(rr()*190+50)|0;if(Ld(x,y)&&Rg(x,y)===AL){town(x,y,3,'#5f94b4',4,i)}}
+  for(let i=0;i<8;i++){const x=(300+ex+rr()*25)|0,y=(rr()*180+50)|0;if(Ld(x,y)&&Rg(x,y)===EN)town(x,y,3,'#9a5a54',4,i)}
   // --- граница с противником: стена и вышки
-  const borderE=[];for(let y=24;y<H-6;y++){for(let x=W-1;x>40;x--){if(land[y*W+x]&&reg[y*W+x]!==EN&&reg[y*W+x]!==AL&&land[y*W+x+1]&&reg[y*W+x+1]===EN){borderE.push([x,y]);break}}}
+  const borderE=[];for(let y=24;y<H-6;y++){for(let x=W-1;x>40;x--){if(Ld(x,y)&&Rg(x,y)!==EN&&Rg(x,y)!==AL&&Ld(x+1,y)&&Rg(x+1,y)===EN){borderE.push([x,y]);break}}}
   for(const p of borderE){tg.fillStyle='#4a2220';tg.fillRect(p[0]+1,p[1],2,1);tg.fillStyle='#8a4038';tg.fillRect(p[0]+1,p[1],1,1)}
   for(let i=4;i<borderE.length;i+=22){const p=borderE[i];Maps.shadow(tg,p[0]+1,p[1]-1,3,3,6,.3);Maps.box(tg,p[0]+1,p[1]-1,3,3,6,{c:'#6a3430',win:false,rn:rr})}
   tg.fillStyle='rgba(60,20,20,.0)';
   // --- итоговая сборка: тень, «срез» земли, поверхность
-  const lm=Maps.mk(W,H),lg=lm.getContext('2d'),li=lg.createImageData(W,H);for(let i=0;i<sz;i++){if(land[i]){li.data[i*4]=li.data[i*4+1]=li.data[i*4+2]=255;li.data[i*4+3]=255}}lg.putImageData(li,0,0);
-  const tint=(src,col)=>{const t=Maps.mk(W,H),q=t.getContext('2d');q.drawImage(src,0,0);q.globalCompositeOperation='source-in';q.fillStyle=col;q.fillRect(0,0,W,H);return t};
-  const blk=tint(lm,'#000');g.globalAlpha=.16;g.drawImage(blk,7,13);g.drawImage(blk,5,10);g.drawImage(blk,3,7);g.globalAlpha=1;
-  const T=7;for(let dy=T;dy>=1;dy--){const st=(dy%3===0)?.82:1;g.drawImage(tint(lm,Maps.mixc('#16100a','#4a3826',((T-dy)/(T-1))*st)),0,dy)}
+  const lm=Maps.mk(Wd,Hd),lg=lm.getContext('2d'),li=lg.createImageData(Wd,Hd);for(let i=0;i<sz;i++){if(land[i]){li.data[i*4]=li.data[i*4+1]=li.data[i*4+2]=255;li.data[i*4+3]=255}}lg.putImageData(li,0,0);
+  const tint=(src,col)=>{const t=Maps.mk(Wd,Hd),q=t.getContext('2d');q.drawImage(src,0,0);q.globalCompositeOperation='source-in';q.fillStyle=col;q.fillRect(0,0,Wd,Hd);return t};
+  const blk=tint(lm,'#000');g.globalAlpha=.16;g.drawImage(blk,7*K,13*K);g.drawImage(blk,5*K,10*K);g.drawImage(blk,3*K,7*K);g.globalAlpha=1;
+  const T=7*K;for(let dy=T;dy>=1;dy--){const st=(dy%3===0)?.82:1;g.drawImage(tint(lm,Maps.mixc('#16100a','#4a3826',((T-dy)/(T-1))*st)),0,dy)}
   g.drawImage(top,0,0);
   // контур береговой линии
-  const edge=Maps.mk(W,H),eg=edge.getContext('2d'),ei=eg.createImageData(W,H);for(let y=1;y<H-1;y++)for(let x=1;x<W-1;x++){const k=y*W+x;if(land[k]&&(!land[k-1]||!land[k-W]))ei.data.set([200,226,232,120],k*4)}eg.putImageData(ei,0,0);g.drawImage(edge,0,0);
+  const edge=Maps.mk(Wd,Hd),eg=edge.getContext('2d'),ei=eg.createImageData(Wd,Hd);for(let y=1;y<Hd-1;y++)for(let x=1;x<Wd-1;x++){const k=y*Wd+x;if(land[k]&&(!land[k-1]||!land[k-Wd]))ei.data.set([200,226,232,120],k*4)}eg.putImageData(ei,0,0);g.drawImage(edge,0,0);
   // --- округа: вырезки для «подъёма» и границы для подсветки
   const regs=[],cliff='#3a2c20';
-  for(let i=0;i<NR;i++){let x0=W,y0=H,x1=-1,y1=-1;const bd=[];
-    for(let y=0;y<H;y++)for(let x=0;x<W;x++){const k=y*W+x;if(reg[k]!==i)continue;if(x<x0)x0=x;if(x>x1)x1=x;if(y<y0)y0=y;if(y>y1)y1=y;
-      if(!land[k-1]||!land[k+1]||!land[k-W]||!land[k+W]||reg[k-1]!==i||reg[k+1]!==i||reg[k-W]!==i||reg[k+W]!==i)bd.push(x,y)}
+  for(let i=0;i<NR;i++){let x0=Wd,y0=Hd,x1=-1,y1=-1;const bd=[];
+    for(let y=0;y<Hd;y++)for(let x=0;x<Wd;x++){const k=y*Wd+x;if(reg[k]!==i)continue;if(x<x0)x0=x;if(x>x1)x1=x;if(y<y0)y0=y;if(y>y1)y1=y;
+      if(!land[k-1]||!land[k+1]||!land[k-Wd]||!land[k+Wd]||reg[k-1]!==i||reg[k+1]!==i||reg[k-Wd]!==i||reg[k+Wd]!==i)bd.push(x/K,y/K)}
     if(x1<0){regs.push(null);continue}
-    const rm=Maps.mk(W,H),rg2=rm.getContext('2d'),ri=rg2.createImageData(W,H);for(let k=0;k<sz;k++)if(reg[k]===i){ri.data[k*4]=ri.data[k*4+1]=ri.data[k*4+2]=255;ri.data[k*4+3]=255}rg2.putImageData(ri,0,0);
+    const rm=Maps.mk(Wd,Hd),rg2=rm.getContext('2d'),ri=rg2.createImageData(Wd,Hd);for(let k=0;k<sz;k++)if(reg[k]===i){ri.data[k*4]=ri.data[k*4+1]=ri.data[k*4+2]=255;ri.data[k*4+3]=255}rg2.putImageData(ri,0,0);
     const cv=Maps.mk(x1-x0+1,y1-y0+1),cg=cv.getContext('2d');cg.drawImage(top,-x0,-y0);cg.globalCompositeOperation='destination-in';cg.drawImage(rm,-x0,-y0);
     const sl=Maps.mk(x1-x0+1,y1-y0+1),sg=sl.getContext('2d');sg.drawImage(rm,-x0,-y0);sg.globalCompositeOperation='source-in';sg.fillStyle=cliff;sg.fillRect(0,0,sl.width,sl.height);
-    const pit=Maps.mk(x1-x0+1,y1-y0+1),pg=pit.getContext('2d');pg.drawImage(rm,-x0,-y0);pg.globalCompositeOperation='source-in';pg.fillStyle='#08151d';pg.fillRect(0,0,pit.width,pit.height);
-    regs.push({i,x0:x0-ex,y0,x1:x1-ex,y1,cv,sl,pit,bd:bd.map((v,k)=>k%2?v:v-ex)})}
+    const pit=Maps.mk(x1-x0+1,y1-y0+1),pg=pit.getContext('2d');pg.drawImage(rm,-x0,-y0);pg.globalCompositeOperation='source-in';pg.fillStyle='#08151d';pg.fillRect(0,0,pit.width,pit.height);cv.K=sl.K=pit.K=K;
+    regs.push({i,x0:x0/K-ex,y0:y0/K,x1:x1/K-ex,y1:y1/K,cv,sl,pit,bd:bd.map((v,k)=>k%2?v:v-ex)})}
   // мягкие маски для дымки заражения
-  const hz=new Maps.Haze(W,H,3);for(let i=0;i<N;i++)hz.addMask((x,y)=>{let s=0,n=0;for(let dy=-3;dy<=3;dy+=2)for(let dx=-3;dx<=3;dx+=2){const xx=Math.max(0,Math.min(W-1,Math.round(x+dx))),yy=Math.max(0,Math.min(H-1,Math.round(y+dy)));n++;if(reg[yy*W+xx]===i)s++}return s/n});
+  const hz=new Maps.Haze(W,H,3);for(let i=0;i<N;i++)hz.addMask((x,y)=>{let s=0,n=0;for(let dy=-3;dy<=3;dy+=2)for(let dx=-3;dx<=3;dx+=2){n++;if(Rg(x+dx,y+dy)===i)s++}return s/n});
   // точки для бликов на воде
-  const sea=[];for(let i=0;i<4000&&sea.length<150;i++){const x=(rn()*W)|0,y=(24+rn()*(H-24))|0;if(!land[y*W+x])sea.push([x,y])}
-  return{ex,cv:c,top,reg,land,regs,haze:hz,sea:sea.map(p=>[p[0]-ex,p[1]]),roads:roads.map(r=>({ax:r.ax-ex,ay:r.ay,cx:r.cx-ex,cy:r.cy,bx:r.bx-ex,by:r.by})),borderE:borderE.map(p=>[p[0]-ex,p[1]]),hgt,regAt:(x,y)=>{x=Math.round(x+ex);y=Math.round(y);return x<0||y<0||x>=W||y>=H?255:reg[y*W+x]}}};
+  const sea=[];for(let i=0;i<4000&&sea.length<150;i++){const x=(rn()*W)|0,y=(24+rn()*(H-24))|0;if(!Ld(x,y))sea.push([x,y])}
+  return{ex,cv:c,top,reg,land,regs,haze:hz,sea:sea.map(p=>[p[0]-ex,p[1]]),roads:roads.map(r=>({ax:r.ax-ex,ay:r.ay,cx:r.cx-ex,cy:r.cy,bx:r.bx-ex,by:r.by})),borderE:borderE.map(p=>[p[0]-ex,p[1]]),hgt,regAt:(x,y)=>{x=Math.round((x+ex)*K);y=Math.round(y*K);return x<0||y<0||x>=Wd||y>=Hd?255:reg[y*Wd+x]}}};

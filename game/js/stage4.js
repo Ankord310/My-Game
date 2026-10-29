@@ -5,7 +5,7 @@ const RG=[
   {id:'e',nm:'Восток',x:232,y:112},{id:'s',nm:'Юг',x:118,y:212},{id:'c',nm:'Побережье',x:230,y:200}];
 const RE=[[0,1],[0,2],[0,3],[0,4],[0,5],[1,2],[1,3],[4,2],[4,5],[3,5]];
 const Hq={
-  tut:'s4',tutAuto:false,map:null,lt:0,
+  tut:'s4',tutAuto:false,rs:2,map:null,lt:0,
   enter(){
     Snd.play('hq');this.mkMap();
     const r=RG.map(o=>({...o,inf:.12+.25*G.cityInf,sup:60,br:0,lift:0,di:0,tk:[],pf:0}));
@@ -23,7 +23,7 @@ const Hq={
       {t:'Наука приближает лекарство. Вложитесь в исследования.',el:'#panel [data-a=s4_res]',wait:()=>s.fund<3},
       {t:'Месяц длится 6 секунд. С 10-го месяца нужен фронт из 3 бригад. Не дайте заражению превысить 90%, а поддержке — упасть ниже 8%.',btn:'Войти в штаб ▶'}
     ],()=>{this.ui();say('Штаб работает!',2)})},
-  mkMap(){const ex=Math.max(0,OX);if(!this.map||this.mapEx!==ex){this.map=Maps.country(RG,RE,ex);this.mapEx=ex}},
+  mkMap(){const ex=Math.max(0,OX);if(!this.map||this.mapEx!==ex){this.map=Maps.country(RG,RE,ex,RS);this.mapEx=ex}},
   resize(){if(this.s&&this.mapEx!==Math.max(0,OX))this.mkMap()},
   log(m){const s=this.s;s.log.unshift('М'+s.m+': '+m);s.logN=(s.logN||0)+1;s.log.length=Math.min(4,s.log.length)},
   pop(x,y,t,c){this.s.fx.push({k:'txt',x,y,t:0,d:1.8,s:t,c:c||'#fff'})},
@@ -103,50 +103,58 @@ const Hq={
     h+=`<div class="log">${s.log.slice(0,2).map((x,i)=>`<div data-key="L${(s.logN||0)-i}">${x}</div>`).join('')}</div>`;panel(h);
   },
   plate(o,i,sel,t){
-    const L=o.lift,x=Math.round(o.x),w=76,h=34,y=Math.round(o.y-34-L),x0=x+(o.lx||0)-(w>>1);
+    const L=o.lift,x=Math.round(o.x),w=62,h=24,y=Math.round(o.y-30-L),x0=x+(o.lx||0)-(w>>1);
     cx.fillStyle='rgba(0,0,0,.35)';cx.beginPath();cx.ellipse(o.x+1,o.y+1-L*.3,8,3.5,0,0,TAU);cx.fill();
-    cx.fillStyle=sel?'#fff':'rgba(140,190,210,.75)';cx.fillRect(x,y+h-2,1,Math.max(0,Math.round(o.y-L-y-h+2)));
-    cx.fillStyle=sel?'rgba(12,28,40,.97)':'rgba(6,14,22,.9)';cx.fillRect(x0,y,w,h);cx.strokeStyle=sel?'#fff':o.sup<35?'#e5a93b':'#3b8aa4';cx.lineWidth=sel?1.5:1;cx.strokeRect(x0+.5,y+.5,w-1,h-1);
+    cx.fillStyle=sel?'#fff':'rgba(140,190,210,.75)';cx.fillRect(x,y+h-2,.7,Math.max(0,Math.round(o.y-L-y-h+2)));
+    cx.fillStyle=sel?'rgba(12,28,40,.95)':'rgba(6,14,22,.84)';cx.fillRect(x0,y,w,h);cx.strokeStyle=sel?'#fff':o.sup<35?'#e5a93b':'#3b8aa4';cx.lineWidth=sel?1.5:1;cx.strokeRect(x0+.5,y+.5,w-1,h-1);
     if(sel){cx.fillStyle='rgba(255,255,255,.09)';cx.fillRect(x0+1,y+1,w-2,h-2)}
-    txt(o.nm.length>13?o.nm.replace('Столичный округ','Столица'):o.nm,x0+(w>>1),y+13,'#ffffff',11,'center');
-    const ic=o.di>.5?'#ffb0a8':o.di>.25?'#ffd067':'#9fe8d6';txt(Math.round(o.di*100)+'%',x0+6,y+27,ic,12,'left');
-    cx.fillStyle=o.sup<35?'#e0453a':o.sup<60?'#e5a93b':'#66e08a';cx.fillRect(x0+w-14,y+19,8,8);cx.fillStyle='rgba(255,255,255,.35)';cx.fillRect(x0+w-14,y+19,8,1);
-    cx.fillStyle='#0b1720';cx.fillRect(x0+2,y+h-4,w-4,3);cx.fillStyle=o.di>.5?'#ff5b4d':o.di>.25?'#e5a93b':'#4cc9c0';cx.fillRect(x0+2,y+h-4,Math.round((w-4)*clamp(o.di,0,1)),3);
-    if(o.id==='cap'){const b=Math.sin(this.s.t*4)*1.2;cx.fillStyle='#ff5b4d';cx.beginPath();cx.moveTo(x,y-11+b);cx.lineTo(x-5,y-2+b);cx.lineTo(x+5,y-2+b);cx.fill();cx.fillStyle='#2a0a0a';cx.fillRect(x,y-8+b,1,4)}
+    txt(o.nm.length>13?o.nm.replace('Столичный округ','Столица'):o.nm,x0+4,y+10,'#ffffff',10,'left');
+    const ic=o.di>.5?'#ffb0a8':o.di>.25?'#ffd067':'#9fe8d6';txt(Math.round(o.di*100)+'%',x0+4,y+20,ic,10,'left');
+    cx.fillStyle=o.sup<35?'#e0453a':o.sup<60?'#e5a93b':'#66e08a';cx.fillRect(x0+w-12,y+13,7,6);cx.fillStyle='rgba(255,255,255,.35)';cx.fillRect(x0+w-12,y+13,7,1);
+    cx.fillStyle='#0b1720';cx.fillRect(x0+2,y+h-3,w-4,2);cx.fillStyle=o.di>.5?'#ff5b4d':o.di>.25?'#e5a93b':'#4cc9c0';cx.fillRect(x0+2,y+h-3,Math.round((w-4)*clamp(o.di,0,1)),2);
+    if(o.id==='cap'){const b=Math.sin(this.s.t*4)*1.2;cx.fillStyle='#ff5b4d';cx.beginPath();cx.moveTo(x,y-9+b);cx.lineTo(x-4,y-2+b);cx.lineTo(x+4,y-2+b);cx.fill();cx.fillStyle='#2a0a0a';cx.fillRect(x,y-6+b,1,3)}
   },
-  token(x,y,sc,col){ // бригада: небольшой бронеобъект
-    x=Math.round(x);y=Math.round(y-(1-sc)*9);cx.globalAlpha=clamp(sc*1.4,0,1);
-    cx.fillStyle='rgba(0,0,0,.4)';cx.fillRect(x+1,y+2,8,3);
-    Maps.box(cx,x,y,7,4,3,{c:col||'#2fb0a6',win:false,roof:'flat',rn:Math.random});cx.fillStyle='#0a1a20';cx.fillRect(x+5,y-2,4,1);cx.fillStyle='#cff';cx.fillRect(x+4,y-3,1,1);cx.globalAlpha=1},
+  token(x,y,sc,col){Art3.tank(Math.round(x)+4,Math.round(y)+4,sc,col||'#2fb0a6')},
   draw(){
     const s=this.s,M=this.map,now=performance.now(),dt=Math.min(.1,(now-this.lt)/1000);this.lt=now;const tm=now/1000;
-    cx.fillStyle='#06121c';cx.fillRect(0,0,W,H);cx.save();cx.translate(OX,0);cx.beginPath();cx.rect(-OX,0,MW,H);cx.clip();cx.drawImage(M.cv,-M.ex,0);
+    cx.fillStyle='#06121c';cx.fillRect(0,0,W,H);cx.save();cx.translate(OX,0);cx.beginPath();cx.rect(-OX,0,MW,H);cx.clip();Maps.dimg(cx,M.cv,-M.ex,0);
     // блики на воде
     cx.fillStyle='rgba(200,240,250,.6)';M.sea.forEach((p,i)=>{if(Math.sin(tm*1.4+i*1.7)>.55)cx.fillRect(p[0],p[1],2+(i%3),1)});
     // «подъём» выбранного округа
     s.r.forEach((o,i)=>{o.lift=tw(o,'lift',i===s.sel?3:0,dt,10);const R=M.regs[i];if(!R||o.lift<.15)return;const L=o.lift;
-      cx.globalAlpha=clamp(L/3,0,1)*.95;cx.drawImage(R.pit,R.x0,R.y0);cx.globalAlpha=1;
-      cx.globalAlpha=.25;cx.drawImage(R.sl,R.x0+3,R.y0+4);cx.globalAlpha=1;
-      for(let k=Math.ceil(L);k>=1;k--)cx.drawImage(R.sl,R.x0,R.y0-(L-k)-0);
-      cx.drawImage(R.cv,R.x0,R.y0-L)});
+      cx.globalAlpha=clamp(L/3,0,1)*.95;Maps.dimg(cx,R.pit,R.x0,R.y0);cx.globalAlpha=1;
+      cx.globalAlpha=.25;Maps.dimg(cx,R.sl,R.x0+3,R.y0+4);cx.globalAlpha=1;
+      for(let k=Math.ceil(L*RS);k>=1;k--)Maps.dimg(cx,R.sl,R.x0,R.y0-(L-k/RS));
+      Maps.dimg(cx,R.cv,R.x0,R.y0-L)});
     // облака с тенями
     for(const c of s.clouds){c.x+=c.v*dt;if(c.x>W+50)c.x=-50;
       cx.fillStyle='rgba(0,0,0,.14)';for(let k=0;k<5;k++){cx.beginPath();cx.ellipse(c.x+k*9*c.s+6,c.y+Math.sin(k*2)*4+12,12*c.s,6*c.s,0,0,TAU);cx.fill()}
       cx.fillStyle='rgba(235,245,252,.12)';for(let k=0;k<5;k++){cx.beginPath();cx.ellipse(c.x+k*9*c.s,c.y+Math.sin(k*2)*4,12*c.s,7*c.s,0,0,TAU);cx.fill()}}
     // дорожные огни между округами и радар столицы
-    M.roads.forEach((r,k)=>{const u=((tm*.22+k*.31)%1),a=1-u,x=a*a*r.ax+2*a*u*r.cx+u*u*r.bx,y=a*a*r.ay+2*a*u*r.cy+u*u*r.by;cx.fillStyle='#ffe28a';cx.fillRect(Math.round(x),Math.round(y),2,2);Post.glow(x,y,8,'255,226,138',.28)});
+    M.roads.forEach((r,k)=>{for(let j=0;j<2;j++){const u=((tm*.045+k*.31+j*.5)%1),a=1-u,x=a*a*r.ax+2*a*u*r.cx+u*u*r.bx,y=a*a*r.ay+2*a*u*r.cy+u*u*r.by,dx=2*(a*(r.cx-r.ax)+u*(r.bx-r.cx)),dy=2*(a*(r.cy-r.ay)+u*(r.by-r.cy));
+      Art3.car(x,y,dx,dy,{k:'civ',col:j?'#6b7a5a':'#9a8f6a'});Post.glow(x,y,7,'255,226,138',.18)}});
     {const c0=s.r[0],an=tm*.9;cx.save();cx.globalCompositeOperation='lighter';cx.fillStyle='rgba(90,220,200,.06)';cx.beginPath();cx.moveTo(c0.x,c0.y);cx.arc(c0.x,c0.y,190,an,an+.35);cx.fill();cx.restore()}
     // заражение
     cx.save();cx.translate(-M.ex,0);M.haze.render(cx,s.r.map(o=>o.inf),tm,{a:.62});cx.restore();
     s.r.forEach((o,i)=>{if(o.inf>.45)Post.glow(o.x,o.y,52,'255,60,45',.1*(o.inf-.2)*(1+.25*Math.sin(tm*2+i)))});
+    // пожары и дым в сильно заражённых округах
+    s.smk=s.smk||[];
+    s.r.forEach((o,i)=>{if(o.inf<.4)return;const n=1+Math.floor((o.inf-.4)*9);for(let k=0;k<n;k++){const an=Maps.hash(i,k,3)*6.283,d=6+Maps.hash(i,k,4)*32,x=o.x+Math.cos(an)*d,y=o.y+Math.sin(an)*d*.75;if(M.regAt(x,y)!==i)continue;
+      Art3.flame(x,y,.8+Maps.hash(i,k,5)*.6,tm,i*10+k);if(Math.random()<dt*.5)s.smk.push({x:x+rnd(-1,1),y:y-5,v:rnd(7,13),l:0,m:rnd(3,5)})}});
+    for(const q of s.smk){q.y-=q.v*dt;q.x+=Math.sin(q.l*2+q.y*.1)*.15;q.l+=dt}s.smk=s.smk.filter(q=>q.l<q.m);
+    for(const q of s.smk){const a=Math.sin(q.l/q.m*3.14)*.3,r=2.5+q.l*2.4,g=cx.createRadialGradient(q.x,q.y,0,q.x,q.y,r);g.addColorStop(0,'rgba(36,28,30,'+a.toFixed(3)+')');g.addColorStop(1,'rgba(36,28,30,0)');cx.fillStyle=g;cx.fillRect(q.x-r,q.y-r,r*2,r*2)}
     // граница выбранного округа: «бегущие огни»
-    {const R=M.regs[s.sel],L=s.r[s.sel].lift;if(R){const f=Math.floor(tm*28);for(let k=0;k<R.bd.length;k+=2){const q=k>>1;if(((q+f)&15)<8){cx.fillStyle='rgba(255,255,255,.9)';cx.fillRect(R.bd[k],R.bd[k+1]-L,1,1)}}}}
+    {const R=M.regs[s.sel],L=s.r[s.sel].lift;if(R){const f=Math.floor(tm*28)*RS,u=1/RS;cx.fillStyle='rgba(255,255,255,.9)';for(let k=0;k<R.bd.length;k+=2){const q=k>>1;if(((q+f)&(16*RS-1))<8*RS)cx.fillRect(R.bd[k],R.bd[k+1]-L,u,u)}}}
     // фронт на восточной границе
     if(s.front){const bd=M.borderE,slots=[.22,.5,.78],hot=s.fr<3;
       slots.forEach((u,q)=>{const p=bd[Math.floor(bd.length*u)];if(!p)return;const x=p[0]-9,y=p[1];s.ftk[q]=tw(s.ftk,q,q<s.fr?1:0,dt,9);
         if(s.ftk[q]>.02)this.token(x,y,s.ftk[q],'#e5a93b');
         if(q>=s.fr){cx.save();cx.setLineDash([2,2]);cx.lineDashOffset=-tm*8;cx.strokeStyle='rgba(229,169,59,'+(.5+.4*Math.sin(tm*4+q)).toFixed(2)+')';cx.strokeRect(x-1.5,y-4.5,10,9);cx.restore()}});
-      if(hot){for(let k=0;k<7;k++){const p=bd[Math.floor((k*37+tm*8)%bd.length)];if(!p)continue;if(Math.sin(tm*7+k*5.3)>.82){Post.glow(p[0]+6,p[1],9,'255,90,60',.5);cx.fillStyle='#ffd24a';cx.fillRect(p[0]+2,p[1],4,1);cx.fillRect(p[0]+9,p[1]+((k%3)-1)*3,2,1)}}}
+      s.fxb=s.fxb||[];
+      slots.forEach((u,q)=>{const p=bd[Math.floor(bd.length*u)];if(!p)return;cx.save();cx.translate(p[0]+17,0);cx.scale(-1,1);Art3.tank(0,p[1]+4,1,'#8a3a34');cx.restore();
+        if(s.ftk[q]>.5)for(let m=0;m<3;m++)Art3.soldier(p[0]-6-m*3.5,p[1]+3+(m%2)*1.5,q*3+m+1,tm,1,hot&&Math.sin(tm*9+m*2+q)>.8)});
+      if(hot&&Math.random()<dt*1.1){const p=bd[Math.floor(Math.random()*bd.length)];if(p)s.fxb.push({x:p[0]+rnd(2,14),y:p[1]+rnd(-6,6),t:0,d:1.5,seed:Math.floor(rnd(0,999))})}
+      for(const f of s.fxb){f.t+=dt;Art3.boom(f.x,f.y,Math.min(.99,f.t/f.d),f.seed,.3)}s.fxb=s.fxb.filter(f=>f.t<f.d);
       const fb=bd[Math.floor(bd.length*.5)];if(fb){otx('ФРОНТ '+s.fr+'/3',fb[0]+22,fb[1]-18,s.fr>=3?'#7dffa6':'#ff8d82',11,'center')}}
     // подписи соседей
     cx.save();cx.translate(12,138);cx.rotate(-Math.PI/2);otx('СОЮЗНИК',0,0,'#8fc6e0',11,'center',.8);cx.restore();cx.save();cx.translate(322,138);cx.rotate(Math.PI/2);otx('ПРОТИВНИК',0,0,'#e08a80',11,'center',.8);cx.restore();

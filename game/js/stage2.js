@@ -303,7 +303,7 @@ const Op={
     // волны
     for(let q=0;q<2;q++){const u=(t*.55+f.id*.37+q*.5)%1;cx.strokeStyle='rgba(255,92,76,'+((1-u)*.55).toFixed(2)+')';cx.lineWidth=1;cx.beginPath();cx.ellipse(f.x,f.y,r0*(.55+u*.95),r0*(.55+u*.95)*.8,0,0,TAU);cx.stroke()}
     // заражённые на улицах
-    const cnt=Math.min(9,f.hp*2+3);
+    const cnt=Math.min(26,f.hp*5+6);
     for(let k=0;k<cnt;k++){const a=k*2.4+f.id+t*(k%2?.28:-.22),rad=r0*(.2+.62*((k*.37)%1));Art3.zombie(f.x+Math.cos(a)*rad,f.y+Math.sin(a)*rad*.8,f.id*17+k,t,true)}
     // споры
     cx.save();cx.globalCompositeOperation='lighter';

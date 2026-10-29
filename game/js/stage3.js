@@ -16,7 +16,7 @@ const Mil={
     this.mkStrip();
     const n=MN.map(o=>({...o,inf:0,sq:0,blk:0,dead:0,cap:o.pop,dp:o.pop,di:0}));
     const L=G.fociLeft||0;n[1].inf=clamp(.30+.04*L,.30,.7);n[0].inf=n[2].inf=clamp(.04+.02*L,.04,.25);
-    n.forEach(o=>{if(o.k==='d'){const R=Maps.D3[o.id];o.dots=Array.from({length:26},()=>({x:rnd(R[0]+8,R[2]-8),y:rnd(R[1]+8,R[3]-8),vx:rnd(-9,9),vy:rnd(-9,9),ph:rnd(0,6)}))}});
+    n.forEach(o=>{if(o.k==='d'){const R=Maps.D3[o.id];o.dots=Array.from({length:72},()=>({x:rnd(R[0]+8,R[2]-8),y:rnd(R[1]+8,R[3]-8),vx:rnd(-9,9),vy:rnd(-9,9),ph:rnd(0,6)}))}});
     const s=this.s={fxs:[],shake:0,t:0,dur:200,n,sel:1,buses:[],saved:0,killed:0,sup:G.support,cruel:0,sqPool:3-((G.s2waste||0)>=6?1:0),med:0,medWarn:false,sirT:rnd(3,6),panT:2,heli:0,log:[],end:false,hudT:0,esc:false,uiSig:'',smoke:[],scars:[],dsaved:0,flash:[],ob:26};
     {const w2=G.s2waste||0;if(w2>=3)this.log('Штаб: службы измотаны ложными вызовами'+(w2>=6?' — отрядов меньше':''));
       if(G.support<40)this.log('Доверие людей низкое: медики могут отказаться работать')}
@@ -151,7 +151,7 @@ const Mil={
   // районы с высоким заражением: очаги пожаров, дым, бегущие в панике люди, мигалки
   crisis(o,t,dt,zs){
     const s=this.s,c=clamp((o.inf-.3)/.45,0,1),R=Maps.D3[o.id],fx=o.cr||(o.cr={fires:[],run:[],ph:rnd(0,6)}),y0=Math.max(R[1],30);
-    const nf=c>0?1+Math.floor(c*5):0,nr=Math.min(14,Math.ceil(o.pop*(1-o.inf)/50));
+    const nf=c>0?1+Math.floor(c*5):0,nr=Math.min(40,Math.ceil(o.pop*(1-o.inf)/22));
     if(fx.fires.length<nf&&Math.random()<dt*1.2)fx.fires.push({x:rnd(R[0]+10,R[2]-10),y:rnd(y0+10,R[3]-8),id:Math.floor(rnd(0,99)),sz:rnd(.9,1.5)});
     else if(fx.fires.length>nf&&Math.random()<dt*.5)fx.fires.pop();
     if(fx.run.length<nr&&Math.random()<dt*2)fx.run.push({x:rnd(R[0]+8,R[2]-8),y:rnd(y0+8,R[3]-6),a:rnd(0,TAU),id:Math.floor(rnd(0,999))});
@@ -208,7 +208,7 @@ const Mil={
     // заражённые на улицах и отряды (спрайты сортируются по глубине)
     const zs=[];
     for(const o of s.n){
-      if(o.k==='d'&&o.dots){const R=Maps.D3[o.id],n=Math.floor(o.inf*24);
+      if(o.k==='d'&&o.dots){const R=Maps.D3[o.id],n=Math.floor(o.inf*72);
         for(let q=0;q<o.dots.length;q++){const d=o.dots[q];d.x+=d.vx*dt*(q<n?1:0);d.y+=d.vy*dt*(q<n?1:0);if(d.x<R[0]+6||d.x>R[2]-6)d.vx*=-1;if(d.y<R[1]+6||d.y>R[3]-6)d.vy*=-1;d.x=clamp(d.x,R[0]+6,R[2]-6);d.y=clamp(d.y,R[1]+6,R[3]-6);
           if(q>=n)continue;zs.push([d.y,d.x,q+o.id.charCodeAt(0)*13])}}
       if(o.k==='d')for(let q=0;q<o.sq;q++){const sx=o.x-12+q*15,sy=o.y+19,fire=o.inf>.08&&Math.floor(tm*7+q*3)%4===0;
