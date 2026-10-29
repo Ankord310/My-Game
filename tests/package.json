@@ -1,0 +1,22 @@
+{
+  "name": "epicenter-tests",
+  "private": true,
+  "description": "Автотесты и бот баланса игры «Эпицентр» (Playwright, headless Chromium)",
+  "scripts": {
+    "campaign": "node campaign.js",
+    "tutorial": "node tutorial.js 1000 459",
+    "stage1": "node stage1.js 1000 459",
+    "panel": "node panel.js",
+    "ui": "node ui.js",
+    "phone-lock": "node phone-lock.js",
+    "save": "node save.js",
+    "screens": "node screens.js 1000 459 a",
+    "web": "node web.js 1366 768",
+    "balance2": "node balance.js 2 1.6 .92 6",
+    "balance3": "node balance.js 3 1.5 .9 4",
+    "all": "node save.js && node campaign.js && node tutorial.js 1000 459 && node stage1.js 1000 459 && node panel.js && node ui.js && node phone-lock.js && node web.js 1366 768"
+  },
+  "devDependencies": {
+    "playwright": "^1.56.0"
+  }
+}

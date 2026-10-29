@@ -1,0 +1,7 @@
+build/
+tests/out/
+tests/node_modules/
+__pycache__/
+*.pyc
+dist/
+signing/*.pem
