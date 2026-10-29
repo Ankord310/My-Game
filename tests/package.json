@@ -14,6 +14,7 @@
     "web": "node web.js 1366 768",
     "balance2": "node balance.js 2 1.6 .92 6",
     "balance3": "node balance.js 3 1.5 .9 4",
+    "balance4": "node balance4.js smart 6",
     "all": "node save.js && node campaign.js && node tutorial.js 1000 459 && node stage1.js 1000 459 && node panel.js && node ui.js && node phone-lock.js && node web.js 1366 768"
   },
   "devDependencies": {

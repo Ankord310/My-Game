@@ -383,7 +383,7 @@ Maps.cityStrip=function(kind,w,K){
 // ---------------------------------------------------------------- этап 4: объёмная карта страны
 // RG — центры округов [{x,y}], RE — связи [[a,b]]. Регионы 0..n-1 — наша страна, n — союзник (запад), n+1 — противник (восток).
 Maps.country=function(RG,RE,ex,K){
-  K=K||1;ex=ex|0;RG=RG.map(p=>({x:p.x+ex,y:p.y}));
+  K=K||1;ex=ex|0;RG=RG.map(p=>({x:p.x+ex,y:p.y,cap:p.cap,pal:p.pal}));
   const W=330+ex,H=270,Wd=W*K,Hd=H*K,N=RG.length,AL=N,EN=N+1,NR=N+2,sz=Wd*Hd,rn=mulberry(9);
   const hgt=new Float32Array(sz),reg=new Uint8Array(sz).fill(255),land=new Uint8Array(sz);
   const ix=(x,y)=>Math.max(0,Math.min(Hd-1,Math.round(y*K)))*Wd+Math.max(0,Math.min(Wd-1,Math.round(x*K))),Ld=(x,y)=>land[ix(x,y)],Rg=(x,y)=>reg[ix(x,y)],Hg=(x,y)=>hgt[ix(x,y)];
@@ -408,7 +408,7 @@ Maps.country=function(RG,RE,ex,K){
     od[q]=r;od[q+1]=gg;od[q+2]=b;od[q+3]=255}
   g.putImageData(oc,0,0);
   // --- верхняя поверхность: рельеф, цвета округов, границы
-  const PALS=[['#3a5a52','#8a948c'],['#2f5c44','#a2aaa2'],['#3a6c44','#8c9a88'],['#5c643a','#a69a82'],['#62743e','#aaa68a'],['#3a6a5c','#8aa098'],['#3a6478','#a0b4c0'],['#6e4a40','#b09a90']];
+  const BASEP=[['#3a5a52','#8a948c'],['#2f5c44','#a2aaa2'],['#3a6c44','#8c9a88'],['#5c643a','#a69a82'],['#62743e','#aaa68a'],['#3a6a5c','#8aa098'],['#5a5a44','#b0a888'],['#3a5c6c','#9fb4bc'],['#4a6a3a','#9aae86'],['#68603e','#b4a888']],PALS=RG.map((p,i)=>BASEP[(p.pal!=null?p.pal:i)%BASEP.length]).concat([['#3a6478','#a0b4c0'],['#6e4a40','#b09a90']]);
   const top=Maps.mk(Wd,Hd),tg=top.getContext('2d'),ti=tg.createImageData(Wd,Hd),td=ti.data;top.K=K;
   const H0=(x,y)=>hgt[Math.max(0,Math.min(Hd-1,y))*Wd+Math.max(0,Math.min(Wd-1,x))];
   for(let yy=0;yy<Hd;yy++)for(let xx=0;xx<Wd;xx++){const x=xx/K,y=yy/K,k=yy*Wd+xx;if(!land[k])continue;const q=k*4,r=reg[k],P=PALS[r];
@@ -421,7 +421,7 @@ Maps.country=function(RG,RE,ex,K){
     let coast=false;for(let d=1;d<=2*K&&!coast;d++)if(!land[k-d]||!land[k+d]||!land[k-d*Wd]||!land[k+d*Wd])coast=true;
     if(coast&&h<.3){cr=cr*.5+112*.5;cg=cg*.5+118*.5;cb=cb*.5+86*.5}
     const f=Math.max(.45,Math.min(1.5,sh+n));td[q]=Math.min(255,cr*f);td[q+1]=Math.min(255,cg*f);td[q+2]=Math.min(255,cb*f);td[q+3]=255;
-    const ri=k+1,di=k+Wd;if((xx<Wd-1&&land[ri]&&reg[ri]!==r)||(yy<Hd-1&&land[di]&&reg[di]!==r)){td[q]*=.45;td[q+1]*=.5;td[q+2]*=.55}}
+    const ri=k+1,di=k+Wd,r2=k+2,d2=k+2*Wd;if((xx<Wd-2&&((land[ri]&&reg[ri]!==r)||(land[r2]&&reg[r2]!==r)))||(yy<Hd-2&&((land[di]&&reg[di]!==r)||(land[d2]&&reg[d2]!==r)))){td[q]*=.36;td[q+1]*=.42;td[q+2]*=.5}}
   tg.putImageData(ti,0,0);tg.setTransform(K,0,0,K,0,0);tg.K=K;
   // --- реки и озёра
   const river=(x0,y0)=>{let x=x0,y=y0;tg.strokeStyle='#2a86a8';tg.lineWidth=1.6;tg.beginPath();tg.moveTo(x,y);
@@ -449,7 +449,7 @@ Maps.country=function(RG,RE,ex,K){
     tg.fillStyle='#f4f8fa';tg.beginPath();tg.moveTo(x,y-s);tg.lineTo(x-s*.28,y-s*.62);tg.lineTo(x+s*.05,y-s*.55);tg.lineTo(x+s*.26,y-s*.66);tg.fill()}
   const town=(x,y,n,col,ht,rs)=>{const items=[];for(let i=0;i<n;i++){const a=i*2.4+rs,r=2+i*1.7,bx=x+Math.cos(a)*r*1.5-3,by=y+Math.sin(a)*r*.9-2,w=5+((rr()*3)|0),h=4+((rr()*2)|0);items.push([bx,by,w,h,ht*(.5+rr()*.9)])}
     items.sort((a,b)=>a[1]-b[1]);for(const b of items)Maps.shadow(tg,b[0],b[1],b[2],b[3],b[4],.3);for(const b of items)Maps.box(tg,b[0],b[1],b[2],b[3],b[4],{c:col,rn:rr,lit:.5,roof:'flat'})};
-  RG.forEach((p,i)=>{if(i===0){tg.strokeStyle='rgba(200,215,225,.3)';tg.lineWidth=1;tg.beginPath();tg.ellipse(p.x,p.y+2,22,14,0,0,6.3);tg.stroke();town(p.x,p.y,10,'#86aac4',7,.5)}else town(p.x,p.y,6,'#7096b0',4,i)});
+  RG.forEach((p,i)=>{if(p.cap){tg.strokeStyle='rgba(200,215,225,.3)';tg.lineWidth=1;tg.beginPath();tg.ellipse(p.x,p.y+2,22,14,0,0,6.3);tg.stroke();town(p.x,p.y,10,'#86aac4',7,.5)}else town(p.x,p.y,6,'#7096b0',4,i)});
   for(let i=0;i<14;i++){const x=(rr()*W)|0,y=(rr()*H)|0;if(!Ld(x,y)||Hg(x,y)>.5||Rg(x,y)>=N)continue;if(RG.some(p=>Math.hypot(p.x-x,p.y-y)<26))continue;town(x,y,3,'#6e88a0',3,i)}
   for(let i=0;i<10;i++){const x=(rr()*(60+ex)+8)|0,y=(rr()*190+50)|0;if(Ld(x,y)&&Rg(x,y)===AL){town(x,y,3,'#5f94b4',4,i)}}
   for(let i=0;i<8;i++){const x=(300+ex+rr()*25)|0,y=(rr()*180+50)|0;if(Ld(x,y)&&Rg(x,y)===EN)town(x,y,3,'#9a5a54',4,i)}

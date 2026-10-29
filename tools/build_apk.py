@@ -36,7 +36,7 @@ def A(name, kind, val, ns=True):
     return (ns, name, kind, val)
 
 def build_axml(icon=False, tree=None):
-    mtree = ('manifest', [A('package', 's', PKG, ns=False), A('versionCode', 'i', 12), A('versionName', 's', '0.9.0-demo')], [
+    mtree = ('manifest', [A('package', 's', PKG, ns=False), A('versionCode', 'i', 13), A('versionName', 's', '0.10.0-demo')], [
         ('uses-permission', [A('name', 's', 'android.permission.VIBRATE')], []),
         ('uses-sdk', [A('minSdkVersion', 'i', 21), A('targetSdkVersion', 'i', 33)], []),
         ('application', [A('theme', 'r', 0x01030007), A('label', 's', 'Эпицентр'), A('allowBackup', 'b', False), A('hardwareAccelerated', 'b', True)] + ([A('icon', 'r', 0x7f010000)] if icon else []), [
