@@ -120,6 +120,12 @@ const Art3=(()=>{
       R(L/2-.5,-Wd/2+.6,.5,.9,'#fff4c0');R(L/2-.5,Wd/2-1.5,.5,.9,'#fff4c0');R(-L/2,-Wd/2+.6,.5,.9,'#ff3b2f');R(-L/2,Wd/2-1.5,.5,.9,'#ff3b2f');
       X.save();X.globalCompositeOperation='lighter';const g=X.createLinearGradient(L/2,0,L/2+10,0);g.addColorStop(0,'rgba(255,240,170,'+(.2+.16*(night||0))+')');g.addColorStop(1,'rgba(255,240,170,0)');X.fillStyle=g;X.beginPath();X.moveTo(L/2,-Wd/2+.8);X.lineTo(L/2+10,-Wd/2-2.5);X.lineTo(L/2+10,Wd/2+2.5);X.lineTo(L/2,Wd/2-.8);X.closePath();X.fill();X.restore();
       X.restore()},
+    // крошечные фигурки для толп: жители (kind 'p'), заражённые ('z'), поднимающиеся ('r'); кадры кэшируются
+    mini(kind,x,y,id,t,fast){const v=Math.floor(hs(id,9)*8),fr=Math.floor(t*(fast?7:3.2)+id)&1;
+      spr('m'+kind+'|'+(kind==='p'?v:0)+'|'+fr,6,5,3,4,(g,ox,oy)=>{const D=d(ox,oy);
+        if(kind==='p'){const sh=['#c0453a','#3c6ea8','#d6b03a','#4c9a62','#a65ea8','#e8e0d0','#d27a3a','#6aa6c8'][v];D(-1,-4,3,2,sh);D(-1,-6,2,2,'#e8c9a0');D(-1,-6,2,1,'#3a2a1e');D(-1,-2,1,fr?1:2,'#222a33');D(1,-2,1,fr?2:1,'#222a33')}
+        else if(kind==='z'){D(-1,-4,3,2,'#3d4a3a');D(-1,-6,2,2,'#8aa57a');D(-1,-5,1,1,'#ff3b2f');D(-2,-5,1,2,'#7b9567');D(2,-5,1,2,'#7b9567');D(-1,-2,1,fr?1:2,'#1c2126');D(1,-2,1,fr?2:1,'#1c2126')}
+        else{D(-2,-2,5,2,'#3d4a3a');D(2,-3,2,2,'#8aa57a');D(3,-3,1,1,'#ff3b2f')}},x,y)},
     // кольцо вспышки заражения: два контура и искры
     ring(x,y,u,red){const c=red?'255,96,80':'125,255,166',r1=6+u*28;X.strokeStyle='rgba('+c+','+(1-u).toFixed(2)+')';X.lineWidth=1.5;X.beginPath();X.ellipse(x,y,r1,r1*.55,0,0,6.3);X.stroke();
       X.lineWidth=.8;X.beginPath();X.ellipse(x,y,r1*.62,r1*.34,0,0,6.3);X.stroke();

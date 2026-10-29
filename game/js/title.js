@@ -88,7 +88,7 @@ const Title={
     this.show(`<div class="ttl"><div class="logo">${'ЭПИЦЕНТР'.split('').map((c,i)=>`<span style="animation-delay:${(i*1.7)%5}s">${c}</span>`).join('')}</div>
       <div class="sub">СИМУЛЯТОР КАТАСТРОФЫ</div>
       <div class="mn"><button class="pbtn pri" data-a="new">▶ Новая кампания</button><button class="pbtn" data-a="demo">Выбор этапа</button><button class="pbtn" data-a="ach">Достижения <span class="cc">${Prog.endCount()}/${ENDS.length}</span></button><button class="pbtn" data-a="settings">Настройки</button><button class="pbtn" data-a="howto">Как играть</button></div>
-      <div class="ver" data-a="ver">v0.8.0 · демо${done?' · ★':''}</div></div>`)},
+      <div class="ver" data-a="ver">v0.9.0 · демо${done?' · ★':''}</div></div>`)},
   rd(){return !!Prog.d.raid},
   ach(){this.pg='ach';
     const n=Prog.endCount(),N=ENDS.length,ex=ACHS.filter(a=>Prog.d.ach[a.k]).length;
