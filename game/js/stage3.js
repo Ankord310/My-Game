@@ -6,10 +6,10 @@ const MN=[
   {id:'b1',nm:'Мост-1',x:170,y:80,pop:0,k:'b'},{id:'b2',nm:'Мост-2',x:170,y:152,pop:0,k:'b'},{id:'b3',nm:'Мост-3',x:170,y:224,pop:0,k:'b'}];
 const ME=[[0,1],[1,2],[0,6],[6,3],[1,7],[7,4],[2,8],[8,5],[3,4],[4,5]];
 const Mil={
-  tut:'s3',tutAuto:false,map:null,haze:null,br:null,lt:0,
+  tut:'s3',tutAuto:false,rs:2,map:null,haze:null,br:null,lt:0,
   enter(){
     Snd.play('mil');
-    if(!this.map){this.map=Maps.city3();this.br=Maps.bridge(46,8);
+    if(!this.map){this.map=Maps.city3(RS);this.br=Maps.bridge(46,8);
       const hz=this.haze=new Maps.Haze(330,270,3),ids='ABCDEF',map=this.map;
       for(const id of ids){const r=Maps.D3[id];hz.addMask((x,y)=>{const d=Math.min(x-r[0],r[2]-x,y-r[1],r[3]-y);return Maps.sstep(-8,30,d)*(map.wat[Math.min(269,y|0)*330+Math.min(329,x|0)]>0?.3:1)})}
       for(const k of[6,7,8]){const m=MN[k];hz.addMask((x,y)=>Math.max(0,1-Math.hypot(x-m.x,(y-m.y)*1.2)/20))}}
@@ -23,7 +23,7 @@ const Mil={
     ctrl(false);this.ui();this.hudUpd();this.lt=performance.now();if(Coach.need('s3'))this.coach();else say('Вы — командир. Эвакуируйте людей и сдерживайте заражённые районы.',4.5);
   },
   exit(){},
-  mkStrip(){const ex=Math.max(0,OX);this.exW=ex;this.strip=ex>2?Maps.cityStrip('c3',ex):null},
+  mkStrip(){const ex=Math.max(0,OX);this.exW=ex;this.strip=ex>2?Maps.cityStrip('c3',ex,RS):null},
   resize(){if(this.s&&this.exW!==Math.max(0,OX))this.mkStrip()},
   // время суток: миссия = сутки с 06:00; ночью заражение растёт быстрее, днём работать легче
   clock(){const s=this.s;return(6+s.t/s.dur*24)%24},
@@ -130,40 +130,38 @@ const Mil={
   },
   // ---------------------------------------------------------------- рисование
   plate(o,i,t,sel,dt){
-    const s=this.s;let px=o.x,py=o.y-37,w=80,h=34;
+    const s=this.s;let w=66,hh=24,px=o.x,py=o.y-37;
     cx.fillStyle='rgba(0,0,0,.35)';cx.beginPath();cx.ellipse(o.x+1,o.y+1,9,4,0,0,TAU);cx.fill();
-    if(o.k==='b'){w=54;h=16;py=o.y-21;
+    if(o.k==='b'){w=54;hh=16;py=o.y-21;
       const col=o.dead?'#ff5b4d':o.blk?'#e5c53b':'#6fb8d8';cx.strokeStyle=col;cx.lineWidth=1.2;cx.beginPath();cx.ellipse(o.x,o.y,9,4,0,0,TAU);cx.stroke()}
-    else{const col=o.blk?'#e5c53b':'#4cc9c0';cx.strokeStyle=col;cx.lineWidth=1.2;cx.globalAlpha=.5+.3*Math.sin(t*3+i);cx.beginPath();cx.ellipse(o.x,o.y,12,5.5,0,0,TAU);cx.stroke();cx.globalAlpha=1}
-    const x0=Math.round(px-w/2),y0=Math.round(py);
-    cx.fillStyle=sel?'#fff':'rgba(140,190,210,.8)';cx.fillRect(Math.round(px),y0+h,1,Math.max(0,Math.round(o.y-y0-h-4)));
-    cx.fillStyle=sel?'rgba(12,28,40,.97)':'rgba(6,14,22,.9)';cx.fillRect(x0,y0,w,h);cx.strokeStyle=sel?'#fff':o.k==='d'&&o.pan?'rgba(255,'+Math.round(70+40*Math.sin(t*8))+',60,'+(.65+.3*Math.sin(t*8)).toFixed(2)+')':o.blk?'#e5a93b':'#3b8aa4';cx.lineWidth=sel||o.pan?1.5:1;cx.strokeRect(x0+.5,y0+.5,w-1,h-1);
-    if(sel){cx.fillStyle='rgba(255,255,255,.09)';cx.fillRect(x0+1,y0+1,w-2,h-2)}
+    else{const R=Maps.D3[o.id];px=R[0]+4+w/2;py=Math.max(R[1],24)+3;if(o.k==='s'){px=R[0]+4+w/2}
+      const col=o.blk?'#e5c53b':'#4cc9c0';cx.strokeStyle=col;cx.lineWidth=1.2;cx.globalAlpha=.5+.3*Math.sin(t*3+i);cx.beginPath();cx.ellipse(o.x,o.y,12,5.5,0,0,TAU);cx.stroke();cx.globalAlpha=1}
+    const x0=Math.round(px-w/2),y0=Math.round(py),pan=o.k==='d'&&o.pan;
+    cx.fillStyle=sel?'rgba(12,28,40,.95)':'rgba(6,14,22,.82)';cx.fillRect(x0,y0,w,hh);
+    cx.strokeStyle=sel?'#fff':pan?'rgba(255,'+Math.round(70+40*Math.sin(t*8))+',60,'+(.65+.3*Math.sin(t*8)).toFixed(2)+')':o.blk?'#e5a93b':'#3b8aa4';cx.lineWidth=sel||pan?1.5:1;cx.strokeRect(x0+.5,y0+.5,w-1,hh-1);
+    if(sel){cx.fillStyle='rgba(255,255,255,.09)';cx.fillRect(x0+1,y0+1,w-2,hh-2)}
     if(o.k==='b'){txt(o.nm,px,y0+12,o.dead?'#ff8d82':'#eaf5fa',10,'center');return}
-    txt(o.nm,px,y0+13,'#ffffff',11,'center');
-    if(o.k==='s'){txt('▲ '+Math.round(s.dsaved),px,y0+27,'#7dffa6',11,'center');return}
+    txt(o.nm,x0+4,y0+10,'#ffffff',10,'left');
+    if(o.k==='s'){txt('▲ '+Math.round(s.dsaved),x0+4,y0+20,'#7dffa6',10,'left');return}
     o.dp=tw(o,'dp',o.pop,dt,5);o.di=tw(o,'di',o.inf,dt,4);
-    cx.fillStyle='#9fb3c0';cx.fillRect(x0+5,y0+18,3,3);cx.fillRect(x0+4,y0+21,5,5);txt(Math.round(o.dp),x0+12,y0+27,'#cfe0ea',10,'left');
-    const ic=o.di>.5?'#ffb0a8':o.di>.25?'#ffd067':'#9fe8d6';txt(Math.round(o.di*100)+'%',x0+w-5,y0+27,ic,11,'right');
-    cx.fillStyle='#0b1720';cx.fillRect(x0+2,y0+h-4,w-4,3);cx.fillStyle=o.di>.5?'#ff5b4d':o.di>.25?'#e5a93b':'#4cc9c0';cx.fillRect(x0+2,y0+h-4,Math.round((w-4)*clamp(o.di,0,1)),3);
+    cx.fillStyle='#9fb3c0';cx.fillRect(x0+4,y0+13,2,2);cx.fillRect(x0+3,y0+15,4,4);txt(Math.round(o.dp),x0+9,y0+19,'#cfe0ea',9,'left');
+    const ic=o.di>.5?'#ffb0a8':o.di>.25?'#ffd067':'#9fe8d6';txt(Math.round(o.di*100)+'%',x0+w-4,y0+19,ic,10,'right');
+    cx.fillStyle='#0b1720';cx.fillRect(x0+2,y0+hh-3,w-4,2);cx.fillStyle=o.di>.5?'#ff5b4d':o.di>.25?'#e5a93b':'#4cc9c0';cx.fillRect(x0+2,y0+hh-3,Math.round((w-4)*clamp(o.di,0,1)),2);
   },
   // районы с высоким заражением: очаги пожаров, дым, бегущие в панике люди, мигалки
-  crisis(o,t,dt){
-    const s=this.s,c=clamp((o.inf-.3)/.45,0,1),R=Maps.D3[o.id],fx=o.cr||(o.cr={fires:[],run:[],ph:rnd(0,6)});
-    const nf=c>0?1+Math.floor(c*5):0,nr=Math.floor(c*8);
-    if(fx.fires.length<nf&&Math.random()<dt*1.2)fx.fires.push({x:rnd(R[0]+10,R[2]-10),y:rnd(Math.max(R[1],30)+8,R[3]-8),ph:rnd(0,6),sz:rnd(1.2,1.9)});
+  crisis(o,t,dt,zs){
+    const s=this.s,c=clamp((o.inf-.3)/.45,0,1),R=Maps.D3[o.id],fx=o.cr||(o.cr={fires:[],run:[],ph:rnd(0,6)}),y0=Math.max(R[1],30);
+    const nf=c>0?1+Math.floor(c*5):0,nr=Math.min(14,Math.ceil(o.pop*(1-o.inf)/50));
+    if(fx.fires.length<nf&&Math.random()<dt*1.2)fx.fires.push({x:rnd(R[0]+10,R[2]-10),y:rnd(y0+10,R[3]-8),id:Math.floor(rnd(0,99)),sz:rnd(.9,1.5)});
     else if(fx.fires.length>nf&&Math.random()<dt*.5)fx.fires.pop();
-    if(fx.run.length<nr&&Math.random()<dt*1.5)fx.run.push({x:rnd(R[0]+8,R[2]-8),y:rnd(Math.max(R[1],30)+8,R[3]-8),a:rnd(0,TAU),v:rnd(16,26),ph:rnd(0,6)});
-    else if(fx.run.length>nr)fx.run.pop();
-    for(const f of fx.fires){const fl=.6+.4*Math.sin(t*14+f.ph)*Math.sin(t*9+f.ph*2),x=Math.round(f.x),y=Math.round(f.y),h=Math.round((3+2*fl)*f.sz);
-      cx.fillStyle='rgba(0,0,0,.4)';cx.fillRect(x-3,y,7,2);
-      cx.fillStyle='#d8431a';cx.fillRect(x-2,y-h+1,5,h);cx.fillStyle='#ff8a2a';cx.fillRect(x-1,y-h,3,h);cx.fillStyle='#ffd45a';cx.fillRect(x,y-h-1,1,Math.max(1,h-2));
-      Post.glow(f.x,f.y-3,15,'255,130,40',.35+.15*fl);
-      if(Math.random()<dt*.9)s.smoke.push({x:f.x+rnd(-2,2),y:f.y-h,v:rnd(10,18),l:0,m:rnd(2,3.5)})}
-    for(const r of fx.run){if(Math.random()<dt*1.4)r.a+=rnd(-1.6,1.6);r.x+=Math.cos(r.a)*r.v*dt;r.y+=Math.sin(r.a)*r.v*dt*.8;
-      if(r.x<R[0]+6||r.x>R[2]-6){r.a=Math.PI-r.a;r.x=clamp(r.x,R[0]+6,R[2]-6)}if(r.y<Math.max(R[1],30)+6||r.y>R[3]-6){r.a=-r.a;r.y=clamp(r.y,Math.max(R[1],30)+6,R[3]-6)}
-      const x=Math.round(r.x),y=Math.round(r.y),b=Math.floor(t*10+r.ph)%2;cx.fillStyle='rgba(0,0,0,.35)';cx.fillRect(x,y+2,3,1);cx.fillStyle='#e8d6a8';cx.fillRect(x,y-2+b,2,3);cx.fillStyle='#f4e8c8';cx.fillRect(x,y-3+b,2,1);
-      if(Math.sin(t*2.2+r.ph*3)>.93)otx('!',r.x,r.y-6,'#ff6b5c',8,'center')}
+    if(fx.run.length<nr&&Math.random()<dt*2)fx.run.push({x:rnd(R[0]+8,R[2]-8),y:rnd(y0+8,R[3]-6),a:rnd(0,TAU),id:Math.floor(rnd(0,999))});
+    else if(fx.run.length>nr&&Math.random()<dt*3)fx.run.pop();
+    for(const f of fx.fires){Art3.flame(f.x,f.y,f.sz,t,f.id);if(Math.random()<dt*.9)s.smoke.push({x:f.x+rnd(-2,2),y:f.y-8*f.sz,v:rnd(10,18),l:0,m:rnd(2,3.5)})}
+    const panic=c>.12,sp=panic?rnd(1,1)*(18+c*10):4;
+    for(const r of fx.run){if(Math.random()<dt*(panic?1.4:.5))r.a+=rnd(-1.6,1.6);r.x+=Math.cos(r.a)*sp*dt;r.y+=Math.sin(r.a)*sp*dt*.8;
+      if(r.x<R[0]+6||r.x>R[2]-6){r.a=Math.PI-r.a;r.x=clamp(r.x,R[0]+6,R[2]-6)}if(r.y<y0+6||r.y>R[3]-6){r.a=-r.a;r.y=clamp(r.y,y0+6,R[3]-6)}
+      zs.push([r.y,r.x,1e6+r.id,{run:panic,panic:panic&&r.id%3===0}]);
+      if(panic&&Math.sin(t*2.2+r.id)>.95)otx('!',r.x,r.y-8,'#ff6b5c',8,'center')}
     if(c>.25){const bx=R[0]+12,by=R[3]-8,on=Math.floor(t*4+fx.ph)%2;cx.fillStyle='#10161c';cx.fillRect(bx-4,by,9,3);cx.fillStyle=on?'#ff3b2f':'#3b6bff';cx.fillRect(bx-4,by-1,4,2);cx.fillStyle=on?'#3b6bff':'#ff3b2f';cx.fillRect(bx+1,by-1,4,2);
       Post.glow(bx,by,14,on?'255,59,47':'59,107,255',.35)}
   },
@@ -207,21 +205,22 @@ const Mil={
     this.haze.render(cx,s.n.map(o=>o.k==='s'?Math.min(1,o.inf*3):o.inf),tm,{a:.6});
     // выжженные места
     for(const q of s.scars){const a=clamp(1-q.t/40,0,1)*.55;cx.fillStyle='rgba(8,6,6,'+a+')';cx.beginPath();cx.ellipse(q.x,q.y,q.r,q.r*.7,0,0,TAU);cx.fill();if(q.t<14){cx.save();cx.globalCompositeOperation='lighter';for(let k=0;k<7;k++)if(Math.sin(tm*6+k*2.3+q.x)>.2){cx.fillStyle='rgba(255,120,40,.55)';cx.fillRect(q.x+Math.cos(k*2.1)*q.r*.6,q.y+Math.sin(k*2.1)*q.r*.4,1,1)}cx.restore()}}
-    // заражённые на улицах и отряды
+    // заражённые на улицах и отряды (спрайты сортируются по глубине)
+    const zs=[];
     for(const o of s.n){
       if(o.k==='d'&&o.dots){const R=Maps.D3[o.id],n=Math.floor(o.inf*24);
         for(let q=0;q<o.dots.length;q++){const d=o.dots[q];d.x+=d.vx*dt*(q<n?1:0);d.y+=d.vy*dt*(q<n?1:0);if(d.x<R[0]+6||d.x>R[2]-6)d.vx*=-1;if(d.y<R[1]+6||d.y>R[3]-6)d.vy*=-1;d.x=clamp(d.x,R[0]+6,R[2]-6);d.y=clamp(d.y,R[1]+6,R[3]-6);
-          if(q>=n)continue;const b=Math.sin(tm*5+d.ph)>.7?-1:0,x=Math.round(d.x),y=Math.round(d.y);cx.fillStyle='rgba(0,0,0,.4)';cx.fillRect(x,y+2,3,1);cx.fillStyle='#43604a';cx.fillRect(x,y-1+b,2,3);cx.fillStyle='#8ca887';cx.fillRect(x,y-2+b,2,1);cx.fillStyle='#ff3b2f';cx.fillRect(x+1,y-2+b,1,1)}}
-      if(o.k==='d')for(let q=0;q<o.sq;q++){const sx=o.x-14+q*14,sy=o.y+18;
-        cx.fillStyle='rgba(0,0,0,.4)';cx.fillRect(sx+1,sy+3,10,5);cx.fillStyle='#2c4a34';cx.fillRect(sx,sy+1,10,5);cx.fillStyle='#4a7a52';cx.fillRect(sx,sy,10,5);cx.fillStyle='#7aa884';cx.fillRect(sx,sy,10,1);cx.fillStyle='#16202a';cx.fillRect(sx+7,sy+1,2,3);
-        for(let k=0;k<3;k++){cx.fillStyle='#1f2a22';cx.fillRect(sx+1+k*2,sy-2,1,2);cx.fillStyle='#d8c8a0';cx.fillRect(sx+1+k*2,sy-3,1,1)}
-        if(o.inf>.08&&Math.floor(tm*7+q*3)%4===0){cx.save();cx.globalCompositeOperation='lighter';cx.strokeStyle='rgba(255,230,140,.85)';cx.beginPath();cx.moveTo(sx+10,sy+2);cx.lineTo(sx+10+(q%2?9:-30),sy+2-4+(q%3)*3);cx.stroke();cx.restore()}}}
-    for(const o of s.n)if(o.k==='d')this.crisis(o,tm,dt);
+          if(q>=n)continue;zs.push([d.y,d.x,q+o.id.charCodeAt(0)*13])}}
+      if(o.k==='d')for(let q=0;q<o.sq;q++){const sx=o.x-12+q*15,sy=o.y+19,fire=o.inf>.08&&Math.floor(tm*7+q*3)%4===0;
+        cx.fillStyle='rgba(0,0,0,.35)';cx.fillRect(sx-1,sy+1,13,1.5);for(let k=0;k<6;k++){cx.fillStyle=k%2?'#6f6a52':'#8b856a';cx.fillRect(sx+k*2,sy-.5,2,1.5);cx.fillStyle='#4e4a38';cx.fillRect(sx+k*2,sy+.5,2,.5)}
+        for(let k=0;k<3;k++)zs.push([sy-1+k*.01,sx+1.5+k*4,-(q*3+k+1),fire&&k===1]);}}
+    for(const o of s.n)if(o.k==='d')this.crisis(o,tm,dt,zs);
+    zs.sort((a,b)=>a[0]-b[0]);for(const z of zs){if(z[2]<0)Art3.soldier(z[1],z[0],-z[2],tm,1,z[3]);else if(z[2]>=1e6)Art3.person(z[1],z[0],z[2]-1e6,tm,z[3]);else Art3.zombie(z[1],z[0],z[2],tm,true)}
     // автобусы, вертолёты, взрывы
-    for(const b of s.buses)this.bus(b,tm);
+    for(const b of s.buses)Art3.bus(b.x,b.y,b.dx,b.dy,b.load,tm,this.nk());
     for(const f of s.fxs){
       if(f.k==='heli'){const u=f.t/f.d,x=f.x0+(f.x1-f.x0)*u,y=f.y0+(f.y1-f.y0)*u,h=16*Math.sin(Math.min(1,u)*Math.PI)+3;
-        cx.fillStyle='rgba(0,0,0,.35)';cx.beginPath();cx.ellipse(x+h*.3,y+2,8,3,0,0,TAU);cx.fill();Maps.heli(cx,x,y-h,tm);Post.glow(x,y-h,12,'200,230,255',.15)}
+        cx.fillStyle='rgba(0,0,0,.35)';cx.beginPath();cx.ellipse(x+h*.3,y+2,8,3,0,0,TAU);cx.fill();Art3.heli(x,y-h,tm,this.nk())}
       else if(f.k==='boom'){const u=f.t/f.d;
         cx.strokeStyle='rgba(255,'+Math.floor(200-u*120)+',60,'+(1-u).toFixed(2)+')';cx.lineWidth=3;cx.beginPath();cx.ellipse(f.x,f.y,6+u*30,(6+u*30)*.7,0,0,TAU);cx.stroke();
         const g=cx.createRadialGradient(f.x,f.y-4,1,f.x,f.y-4,14*(1-u*.5)+4);g.addColorStop(0,'rgba(255,240,190,'+(1-u).toFixed(2)+')');g.addColorStop(.5,'rgba(255,150,50,'+((1-u)*.7).toFixed(2)+')');g.addColorStop(1,'rgba(255,80,30,0)');cx.fillStyle=g;cx.fillRect(f.x-24,f.y-30,48,48);

@@ -1,6 +1,6 @@
 'use strict';
 // W — логическая ширина холста: подстраивается под соотношение сторон экрана (H фиксирована), см. fit()
-const $=s=>document.querySelector(s),H=270,MAXA=2.6;let W=480,MW=330,OX=0;const PNL=150,SAFE={l:0,r:0,t:0,b:0};
+const $=s=>document.querySelector(s),H=270,MAXA=2.6;let W=480,MW=330,OX=0,RS=1;const PNL=150,SAFE={l:0,r:0,t:0,b:0};
 const cv=$('#cv'),cx=cv.getContext('2d');cx.imageSmoothingEnabled=false;
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),rnd=(a,b)=>a+Math.random()*(b-a),pick=a=>a[Math.floor(Math.random()*a.length)];
 const mmss=t=>{t=Math.max(0,Math.floor(t));return String(Math.floor(t/60)).padStart(2,'0')+':'+String(t%60).padStart(2,'0')};
@@ -41,7 +41,7 @@ function fit(){
   const pr=$('#sfp');if(pr){const cs=getComputedStyle(pr),k=nw/aw;
     SAFE.l=Math.max(0,(parseFloat(cs.paddingLeft)||0)-gx)*k;SAFE.r=Math.max(0,(parseFloat(cs.paddingRight)||0)-gx)*k;SAFE.t=(parseFloat(cs.paddingTop)||0)*k;SAFE.b=(parseFloat(cs.paddingBottom)||0)*k}
   MW=Math.max(250,nw-Math.round(PNL+SAFE.r));OX=MW-330;
-  if(nw!==W){W=nw;cv.width=W;cx.imageSmoothingEnabled=false;Post.vc=null;Post.rain=null}
+  if(nw!==W){W=nw;cv.width=W*RS;cv.height=H*RS;cx.imageSmoothingEnabled=false;Post.vc=null;Post.rain=null}
   if(typeof mode!=='undefined'&&mode&&mode.resize)mode.resize();
   if(typeof Slides!=='undefined'&&Slides.open){Slides.fitC();Slides.fitUI()}
   if(typeof Tut!=='undefined'&&Tut.on)Tut.fit();
@@ -51,8 +51,10 @@ let fitT=0;addEventListener('resize',()=>{clearTimeout(fitT);fitT=setTimeout(fit
 let mode=null,last=0;
 const Pause={on:false};
 function imgSrc(n){return(typeof IMG!=='undefined'&&IMG['art_'+n])||'img/art_'+n+'.png'}
-function setMode(m){if(Pause.close)Pause.close(true);if(mode&&mode.exit)mode.exit();mode=m;if(m&&m.enter)m.enter();if(typeof Tut!=='undefined')Tut.auto(m)}
-function frame(t){const dt=Math.min(.05,(t-last)/1000||0);last=t;try{if(mode){const blk=(typeof Tut!=='undefined'&&Tut.on)||Pause.on||(typeof Dlg!=='undefined'&&Dlg.on);if(!blk){if(typeof Coach!=='undefined'&&Coach.on){if(mode.coachUpdate)mode.coachUpdate(dt)}else mode.update(dt)}mode.draw()}if(typeof Dlg!=='undefined')Dlg.tick(dt);if(typeof Coach!=='undefined')Coach.tick();Cnt.tick(dt)}catch(e){console.error(e);window.__err=(window.__err||'')+e.stack+'\n'}requestAnimationFrame(frame)}
+// RS — множитель разрешения холста (1 — обычный пиксель-арт, 2 — детальный режим этапа)
+function setRS(k){if(k===RS)return;RS=k;cv.width=W*k;cv.height=H*k;cx.imageSmoothingEnabled=false;Post.vc=null;Post.rain=null}
+function setMode(m){if(Pause.close)Pause.close(true);if(mode&&mode.exit)mode.exit();mode=m;setRS((m&&m.rs)||1);if(m&&m.enter)m.enter();if(typeof Tut!=='undefined')Tut.auto(m)}
+function frame(t){const dt=Math.min(.05,(t-last)/1000||0);last=t;try{if(mode){cx.setTransform(RS,0,0,RS,0,0);const blk=(typeof Tut!=='undefined'&&Tut.on)||Pause.on||(typeof Dlg!=='undefined'&&Dlg.on);if(!blk){if(typeof Coach!=='undefined'&&Coach.on){if(mode.coachUpdate)mode.coachUpdate(dt)}else mode.update(dt)}mode.draw()}if(typeof Dlg!=='undefined')Dlg.tick(dt);if(typeof Coach!=='undefined')Coach.tick();Cnt.tick(dt)}catch(e){console.error(e);window.__err=(window.__err||'')+e.stack+'\n'}requestAnimationFrame(frame)}
 requestAnimationFrame(frame);
 // ---------- ui helpers ----------
 // Обновление DOM «на месте»: меняются только отличающиеся атрибуты и тексты, поэтому панели не мигают,
@@ -103,7 +105,7 @@ function mulberry(a){return()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1
 
 // ---------- общая постобработка карт: свет, виньетка, частицы
 const Post={vc:null,
-  vig(a){if(!this.vc){const c=document.createElement('canvas');c.width=W;c.height=H;const g=c.getContext('2d'),gr=g.createRadialGradient(W*.34,H*.56,H*.38,W*.34,H*.56,H*.98);gr.addColorStop(0,'rgba(0,0,0,0)');gr.addColorStop(1,'rgba(0,0,0,.6)');g.fillStyle=gr;g.fillRect(0,0,W,H);this.vc=c}cx.globalAlpha=a==null?1:a;cx.drawImage(this.vc,0,0);cx.globalAlpha=1},
+  vig(a){if(!this.vc){const c=document.createElement('canvas');c.width=W;c.height=H;const g=c.getContext('2d'),gr=g.createRadialGradient(W*.34,H*.56,H*.38,W*.34,H*.56,H*.98);gr.addColorStop(0,'rgba(0,0,0,0)');gr.addColorStop(1,'rgba(0,0,0,.6)');g.fillStyle=gr;g.fillRect(0,0,W,H);this.vc=c}cx.globalAlpha=a==null?1:a;cx.save();cx.imageSmoothingEnabled=true;cx.drawImage(this.vc,0,0,W,H);cx.restore();cx.globalAlpha=1},
   glow(x,y,r,rgb,a){cx.save();cx.globalCompositeOperation='lighter';const g=cx.createRadialGradient(x,y,0,x,y,r);g.addColorStop(0,'rgba('+rgb+','+a+')');g.addColorStop(1,'rgba('+rgb+',0)');cx.fillStyle=g;cx.fillRect(x-r,y-r,r*2,r*2);cx.restore()},
   rain:null,
   drops(n,wid,t,dt,col){if(!this.rain)this.rain=Array.from({length:n},()=>({x:Math.random()*wid,y:Math.random()*H,v:160+Math.random()*90}));

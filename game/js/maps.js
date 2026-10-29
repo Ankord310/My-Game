@@ -25,7 +25,15 @@ Maps.box=(g,x,y,w,h,ht,o)=>{
   g.fillStyle=S;for(let z=0;z<ht;z++)g.fillRect(x+Math.round(ox*z/ht),y+h-1-z,w,1);
   g.fillStyle='rgba(255,255,255,.16)';for(let z=0;z<ht;z++)g.fillRect(x+Math.round(ox*z/ht),y+h-1-z,1,1);
   g.fillStyle='rgba(0,0,0,.28)';g.fillRect(x,y+h-1,w,1);
-  if(o.win!==false&&ht>=5){
+  const K=g.K||1,e=1/K;
+  if(K>1&&o.win!==false&&ht>=5){ // детальные окна: мелкая сетка, подоконники, этажные пояса
+    const lit=o.lit==null?.42:o.lit,wc=o.wc||['#f4d68a','#ffe9ae','#a8e6ff'];
+    for(let z=1.5,fl=0;z<ht-1;z+=2,fl++){const sx=ox*z/ht;
+      if(fl%3===2){g.fillStyle='rgba(0,0,0,.22)';g.fillRect(x+sx,y+h-1.5-z+1.5,w,e);g.fillStyle='rgba(255,255,255,.08)';g.fillRect(x+sx,y+h-1.5-z+1.5+e,w,e)}
+      for(let wx=1.5;wx<w-1.5;wx+=2){const on=rn()<lit;g.fillStyle=on?wc[(rn()*wc.length)|0]:(rn()<.3?'#16222d':'#0a131b');g.fillRect(x+sx+wx,y+h-1.5-z,1,1);
+        if(on){g.fillStyle='rgba(255,255,255,.35)';g.fillRect(x+sx+wx,y+h-1.5-z,e,e)}else if(rn()<.08){g.fillStyle='rgba(120,170,200,.25)';g.fillRect(x+sx+wx,y+h-1.5-z,1,e)}}
+      for(let d=1.5;d<h-1.5;d+=2){g.fillStyle=rn()<lit*.7?'#c99a44':'#0b141c';g.fillRect(x+sx,y+d-z-1,e*2,1)}}}
+  else if(o.win!==false&&ht>=5){
     const lit=o.lit==null?.42:o.lit,wc=o.wc||['#f4d68a','#ffe9ae','#a8e6ff'];
     for(let z=2;z<ht-1;z+=3){const sx=Math.round(ox*z/ht);
       for(let wx=2;wx<w-2;wx+=3){g.fillStyle=rn()<lit?wc[(rn()*wc.length)|0]:'#0a131b';g.fillRect(x+sx+wx,y+h-2-z,2,2)}
@@ -44,14 +52,19 @@ Maps.box=(g,x,y,w,h,ht,o)=>{
   else if(R==='ac'||R==='flat'){const n=R==='ac'?1+((rn()*3)|0):0;for(let k=0;k<n;k++){const ax=rx+2+((rn()*Math.max(1,w-6))|0),ay=ry+2+((rn()*Math.max(1,h-5))|0);g.fillStyle='#16222c';g.fillRect(ax,ay+1,3,2);g.fillStyle='#4a6378';g.fillRect(ax,ay,3,1)}}
   g.fillStyle=Maps.sh(rc,1.35);g.fillRect(rx,ry,w,1);g.fillRect(rx,ry,1,h);
   g.fillStyle=Maps.sh(rc,.62);g.fillRect(rx+w-1,ry,1,h);g.fillRect(rx,ry+h-1,w,1);
+  if(K>1&&w>=6&&h>=5){ // парапет, швы кровли, вентиляция
+    g.fillStyle=Maps.sh(rc,1.12);g.fillRect(rx+1,ry+1,w-2,e);g.fillRect(rx+1,ry+1,e,h-2);g.fillStyle=Maps.sh(rc,.8);g.fillRect(rx+1,ry+h-1-e,w-2,e);g.fillRect(rx+w-1-e,ry+1,e,h-2);
+    if(R!=='pad'&&R!=='tank'&&R!=='arch'){g.fillStyle='rgba(0,0,0,.12)';for(let px=rx+3;px<rx+w-2;px+=3)g.fillRect(px,ry+1,e,h-2);
+      if(rn()<.5&&w>8&&h>7){const vx=rx+2+((rn()*(w-6))|0),vy=ry+2+((rn()*(h-5))|0);g.fillStyle='#0f1a22';g.fillRect(vx,vy,2,1.5);g.fillStyle='#6f8798';g.fillRect(vx,vy,2,.5);g.fillStyle='#c8d6df';g.fillRect(vx+.5,vy+.5,1,e)}}}
   if(o.ant){g.fillStyle='#9fb0bc';g.fillRect(rx+(w>>1),ry-o.ant,1,o.ant);if(o.lights)o.lights.push({x:rx+(w>>1),y:ry-o.ant-1})}
   return{rx,ry}};
-Maps.tree=(g,x,y,r,rn,pal)=>{pal=pal||['#173f2c','#2c6c48','#66b27c'];x=Math.round(x);y=Math.round(y);
+Maps.tree=(g,x,y,r,rn,pal)=>{pal=pal||['#173f2c','#2c6c48','#66b27c'];x=Math.round(x);y=Math.round(y);const K=g.K||1;
   g.fillStyle='rgba(0,0,0,.3)';g.beginPath();g.ellipse(x+r*.55,y+1,r*.95,r*.42,0,0,6.3);g.fill();
   g.fillStyle='#3a2a1e';g.fillRect(x,y-3,1,3);const cy=y-3-r*.75;
   g.fillStyle=pal[0];g.beginPath();g.arc(x,cy,r,0,6.3);g.fill();
   g.fillStyle=pal[1];g.beginPath();g.arc(x-r*.25,cy-r*.28,r*.66,0,6.3);g.fill();
-  g.fillStyle=pal[2];g.fillRect(Math.round(x-r*.5),Math.round(cy-r*.55),Math.max(1,Math.round(r*.4)),1)};
+  g.fillStyle=pal[2];g.fillRect(Math.round(x-r*.5),Math.round(cy-r*.55),Math.max(1,Math.round(r*.4)),1);
+  if(K>1)for(let i=0;i<r*7;i++){const a=rn()*6.3,d=Math.sqrt(rn())*r*.95;g.fillStyle=rn()<.5?pal[2]:'rgba(0,0,0,.3)';g.fillRect(Math.round((x+Math.cos(a)*d)*K)/K,Math.round((cy+Math.sin(a)*d*.9)*K)/K,1/K,1/K)}};
 Maps.chimney=(g,x,y,ht,r)=>{x=Math.round(x);y=Math.round(y);
   g.fillStyle='rgba(0,0,0,.3)';Maps.poly(g,[[x-r,y],[x+r,y],[x+r+ht*.5,y+ht*.3],[x-r+ht*.5,y+ht*.3]]);
   for(let i=0;i<r*2;i++){const k=i/(r*2-1);g.fillStyle=Maps.mixc('#7a6a60','#2e2826',k*k);g.fillRect(x-r+i,y-ht,1,ht)}
@@ -112,7 +125,7 @@ Maps.PAL={
   mix:['#30475e','#38546e','#2b3f52','#3f5a70','#3d4e60','#4a4350']
 };
 Maps.bakeCity=function(o){
-  const W=o.w,H=o.h,rn=mulberry(o.seed||5),c=Maps.mk(W,H),g=c.getContext('2d'),items=[],lamps=[],lights=[],hys=o.hy,vxs=o.vx,R0=o.rv0,R1=o.rv1,wat=new Float32Array(W*H);
+  const W=o.w,H=o.h,K=o.K||1,e=1/K,rn=mulberry(o.seed||5),c=Maps.mk(W*K,H*K),g=c.getContext('2d'),items=[],lamps=[],lights=[],hys=o.hy,vxs=o.vx,R0=o.rv0,R1=o.rv1,wat=new Float32Array(W*H);
   // --- земля и вода
   const im=g.createImageData(W,H),d=im.data;
   for(let y=0;y<H;y++){const a=R0?R0(y):0,b=R0?R1(y):-1;
@@ -126,7 +139,15 @@ Maps.bakeCity=function(o){
     if(wat[k]>0){if(wat[k-1]===0||wat[k+1]===0||wat[k-W]===0||wat[k+W]===0){d[q]=d[q]*.5+88;d[q+1]=d[q+1]*.5+110;d[q+2]=d[q+2]*.5+120}continue}
     let near=0;for(let r=1;r<=2&&!near;r++){if(wat[k-r]>0||wat[k+r]>0||wat[k-r*W]>0||wat[k+r*W]>0)near=r}
     if(near===1){d[q]=64;d[q+1]=86;d[q+2]=102}else if(near===2){d[q]=36;d[q+1]=58;d[q+2]=72}}
-  g.putImageData(im,0,0);
+  if(K>1){const tc=Maps.mk(W,H);tc.getContext('2d').putImageData(im,0,0);g.imageSmoothingEnabled=false;g.drawImage(tc,0,0,W*K,H*K);
+    // мелкое зерно земли и блики воды в разрешении холста
+    const hi=g.getImageData(0,0,W*K,H*K),hd=hi.data,HW=W*K;
+    for(let Y=0;Y<H*K;Y++)for(let X=0;X<HW;X++){const q=(Y*HW+X)*4,n=(Maps.hash(X,Y,11)-.5)*7,wv=wat[((Y/K)|0)*W+((X/K)|0)]>0;
+      hd[q]+=n;hd[q+1]+=n;hd[q+2]+=n;
+      if(wv&&Maps.hash(X>>1,Y,13)>.965&&Maps.vn(X*.05,Y*.18,4)>.55){hd[q]+=60;hd[q+1]+=84;hd[q+2]+=96}}
+    g.putImageData(hi,0,0)}
+  else g.putImageData(im,0,0);
+  g.K=K;g.setTransform(K,0,0,K,0,0);
   const water=(x,y)=>wat[Math.max(0,Math.min(H-1,y|0))*W+Math.max(0,Math.min(W-1,x|0))]>0;
   const hband=y=>hys.some(r=>Math.abs(y-r.y)<=r.w/2),vband=x=>vxs.some(r=>Math.abs(x-r.x)<=r.w/2);
   // --- дороги
@@ -143,6 +164,13 @@ Maps.bakeCity=function(o){
   for(const a of hys)for(const b of vxs){if(!(a.maj&&b.maj)||water(b.x,a.y))continue;g.fillStyle='rgba(215,228,235,.3)';
     for(const sx of[-1,1])for(let i=0;i<3;i++)g.fillRect(b.x+sx*(b.w/2+2+i*2)-(sx<0?1:0),a.y-a.w/2+1,1,a.w-2);
     for(const sy of[-1,1])for(let i=0;i<3;i++)g.fillRect(b.x-b.w/2+1,a.y+sy*(a.w/2+2+i*2)-(sy<0?1:0),b.w-2,1)}
+  if(K>1){ // фактура асфальта: заплатки, трещины, люки, разметка тоньше, припаркованные машины
+    for(const r of hys)for(let i=0;i<W*r.w/9;i++){const x=rn()*W,y=r.y+(rn()-.5)*(r.w-2);if(water(x,y))continue;g.fillStyle=rn()<.5?'rgba(255,255,255,.07)':'rgba(0,0,0,.22)';g.fillRect(x,y,rn()<.2?2:1/K,rn()<.2?1:1/K)}
+    for(const r of vxs)for(let i=0;i<H*r.w/9;i++){const x=r.x+(rn()-.5)*(r.w-2),y=rn()*H;if(water(x,y)||hband(y))continue;g.fillStyle=rn()<.5?'rgba(255,255,255,.07)':'rgba(0,0,0,.22)';g.fillRect(x,y,rn()<.2?1:1/K,rn()<.2?2:1/K)}
+    for(const r of hys)for(let x=10;x<W-10;x+=26+((rn()*14)|0)){if(water(x,r.y)||vband(x))continue;g.fillStyle='#0a1218';g.beginPath();g.arc(x,r.y+(rn()<.5?-1:1)*(r.w/4),1,0,6.3);g.fill();g.fillStyle='rgba(120,150,170,.25)';g.fillRect(x-.5,r.y-r.w/4-.5+(rn()<.5?0:r.w/2),1,e)}
+    const CARS=['#7a2d2d','#2d4f7a','#9aa6ad','#c4b46a','#35684a','#59595f'];
+    for(const r of hys){if(r.maj)continue;for(let x=14;x<W-14;x+=18+((rn()*20)|0)){if(water(x,r.y)||vband(x)||vband(x+5))continue;const side=rn()<.5?-1:1,y=r.y+side*(r.w/2-1.4),col=CARS[(rn()*CARS.length)|0];
+      items.push({y:y+1,dr:gg=>{gg.fillStyle='rgba(0,0,0,.4)';gg.fillRect(x+.5,y+.5,5,2);gg.fillStyle=Maps.sh(col,.6);gg.fillRect(x,y,5,2);gg.fillStyle=col;gg.fillRect(x,y-.5,5,1.5);gg.fillStyle='rgba(180,220,240,.55)';gg.fillRect(x+1.5,y-.5,2,1);gg.fillStyle='rgba(255,255,255,.3)';gg.fillRect(x,y-.5,5,e)}})}}}
   // --- уличные фонари на перекрёстках
   for(const a of hys)for(const b of vxs){if(water(b.x,a.y)||((a.y*7+b.x*3)%3===0&&!(a.maj&&b.maj)))continue;
     const px=Math.round(b.x+b.w/2+1),py=Math.round(a.y+a.w/2+1);if(water(px,py)||px>=W-2||py>=H-2)continue;lamps.push({x:px,y:py-7});
@@ -215,7 +243,7 @@ Maps.bakeCity=function(o){
   for(const it of items)if(it.sh)it.sh(g);
   for(const it of items)it.dr(g);
   // мягкая вечерняя виньетка и общий тон
-  return{cv:c,lamps,lights,water,wat,items,blocks}};
+  return{cv:c,K,lamps,lights,water,wat,items,blocks}};
 
 // ---------------------------------------------------------------- этап 2: городской район 330×270
 Maps.city2=function(){
@@ -287,12 +315,12 @@ Maps.extra3=function(ctx){
     gg.fillStyle='#e8a850';gg.fillRect(L[0].rx,L[0].ry,L[1].rx-L[0].rx+2,2);gg.fillStyle='#b9772a';gg.fillRect(L[0].rx+9,L[0].ry,3,16);gg.fillStyle='#fff';gg.fillRect(L[0].rx+10,L[0].ry+16,1,3)}});
   for(const[bx,by,c]of[[231,255,'#e0453a'],[298,258,'#4cc9c0'],[310,252,'#e0453a']])lights.push({x:bx,y:by,k:'b',c});
 };
-Maps.city3=function(){
+Maps.city3=function(K){
   const hy=[[44,5],[80,8],[116,5],[152,8],[188,5],[224,8],[252,5]].map(a=>({y:a[0],w:a[1],maj:a[1]>5})),
     vx=[[12,5],[40,5],[78,8],[116,5],[142,5],[198,5],[228,5],[268,8],[300,5],[326,5]].map(a=>({x:a[0],w:a[1],maj:a[1]>5}));
   const sea=(x,y)=>{if(x<202)return 0;const sy=247+Math.sin(x/17)*2+Maps.vn(x*.05,3,5)*3;return y>sy?Math.min(1,.35+(y-sy)/11):0};
   const ground=(x,y)=>{if(x<150)return y<116?[15,25,33]:y<188?[14,22,32]:[24,26,28];return y<116?[13,27,26]:y<188?[16,32,28]:[20,27,33]};
-  return Maps.bakeCity({w:330,h:270,top:22,seed:23,hy,vx,sea,ground,rv0:y=>150+Math.sin(y/40)*2.5,rv1:y=>190+Math.sin(y/40+.7)*2.5,
+  return Maps.bakeCity({w:330,h:270,K:K||1,top:22,seed:23,hy,vx,sea,ground,rv0:y=>150+Math.sin(y/40)*2.5,rv1:y=>190+Math.sin(y/40+.7)*2.5,
     zone:(cx,cy)=>{if(cx<150)return cy<116?'res':cy<188?'down':'ind';if(cx<198)return'skip';if(cy<116)return Maps.hash((cx/9)|0,(cy/9)|0,6)<.2?'park':'sub';if(cy<188)return'skip';return'ind'},
     extra:Maps.extra3})};
 
@@ -300,15 +328,17 @@ Maps.city3=function(){
 // ---------------------------------------------------------------- продолжение города слева от карты (для широких экранов)
 // kind: 'c2' | 'c3'; w — ширина полосы в логических пикселях (мировые x от -w до 0)
 // выводит карту мира; strip (необязательно) — продолжение влево
-Maps.blit=function(g,map,strip){if(!strip){g.drawImage(map.cv,0,0);return}g.drawImage(strip.cv,strip.x0,0);const c=strip.cut,w=map.cv.width-c;if(w>0)g.drawImage(map.cv,c,0,w,map.cv.height,c,0,w,map.cv.height)};
-Maps.cityStrip=function(kind,w){
+Maps.blit=function(g,map,strip){const K=map.K||1,mw=map.cv.width/K,mh=map.cv.height/K;
+  if(!strip){g.drawImage(map.cv,0,0,mw,mh);return}
+  g.drawImage(strip.cv,strip.x0,0,strip.cv.width/(strip.K||1),strip.cv.height/(strip.K||1));const c=strip.cut,w=mw-c;if(w>0)g.drawImage(map.cv,c*K,0,w*K,mh*K,c,0,w,mh)};
+Maps.cityStrip=function(kind,w,K){
   w=Math.max(8,Math.round(w));const c3=kind==='c3',rx=c3?12:3,ov=rx+5,SW=w+ov,step=c3?[28,38]:[44];
   const hy=(c3?[[44,5],[80,8],[116,5],[152,8],[188,5],[224,8],[252,5]].map(a=>({y:a[0],w:a[1],maj:a[1]>5})):[19,63,107,151,195,239].map(y=>({y,w:y===107||y===195?7:5,maj:y===107||y===195})));
   const vx=[];let x=w+rx,k=0;while(x>-4){vx.push({x,w:5,maj:false});x-=step[k%step.length];k++}vx.reverse();
-  const r=Maps.bakeCity({w:SW,h:270,top:22,seed:c3?31:19,hy,vx,
+  const r=Maps.bakeCity({w:SW,h:270,K:K||1,top:22,seed:c3?31:19,hy,vx,
     ground:(x,y)=>c3?(y<116?[15,25,33]:y<188?[14,22,32]:[24,26,28]):[13,22,30],
     zone:(cx,cy)=>{if(c3)return cy<116?'res':cy<188?'down':'ind';const h=Maps.hash((cx/8)|0,(cy/8)|0,4);return h<.09?'park':h<.2?'sub':h<.38?'res':'mix'}});
-  return{cv:r.cv,w:SW,x0:-w,cut:rx-3,lamps:r.lamps.map(L=>({x:L.x-w,y:L.y})),lights:r.lights.map(L=>({x:L.x-w,y:L.y}))}};
+  return{cv:r.cv,K:r.K,w:SW,x0:-w,cut:rx-3,lamps:r.lamps.map(L=>({x:L.x-w,y:L.y})),lights:r.lights.map(L=>({x:L.x-w,y:L.y}))}};
 
 // ---------------------------------------------------------------- этап 4: объёмная карта страны
 // RG — центры округов [{x,y}], RE — связи [[a,b]]. Регионы 0..n-1 — наша страна, n — союзник (запад), n+1 — противник (восток).
