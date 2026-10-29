@@ -239,3 +239,5 @@ body.pn #toast{left:34.4%;max-width:56%}
 #evbox .ev .ad{font-size:1.3rem;color:#ffe3a8;font-weight:bold}#evbox .ev .tt{color:#cfe0ea;font-size:1rem;line-height:1.25;margin:.15rem 0 .4rem}
 #evbox .ev .tm{position:absolute;left:0;bottom:0;height:.24rem;background:#e5a93b}
 #evbox .ev .r2 .pb{min-width:0}
+
+.r3 .pb .bd{display:none}.r3 .pb{padding:.4rem .3rem!important;justify-content:center}.r3 .pb .tx{text-align:center;flex:0 1 auto}
