@@ -41,7 +41,7 @@ const Op={
     if(!this.map.stn)this.bakeStations();
     this.mkStrip();
     const s=this.s={t:0,dur:180,calls:[],foci:[],units:[],sel:null,losses:0,ok:0,fail:0,id:1,fat:0,lock:0,home:false,log:[],crew:{police:3,amb:3,fire:2,spec:0},specMax:1,nx:5,end:false,fid:1,hudT:0,spawnT:{},fx:[],sig:'',vis:{},wave:24,amb:30,
-      rev:false,revT:0,dz:36,dcall:null,cut:null,tutOn:false};
+      rev:false,revT:0,dz:36,dcall:null,cut:null,tutOn:false,blocks:[],blkT:rnd(26,38)};
     this.mkCars();for(let i=0;i<2;i++)this.addFocus(i?2:3);
     ctrl(false);this.ui();this.hudUpd();this.lt=performance.now();
     if(Coach.need('s2'))this.coach();else say('Смена диспетчера началась. Нажимайте на мигающие метки вызовов.',4);
@@ -119,12 +119,31 @@ const Op={
     if(b){s.sel=b;this.ui();beep(620,.04);vib(12)}
   },
   // ---------------------------------------------------------------- маршруты по улицам
+  blocked(a,b){const B=this.s&&this.s.blocks;if(!B)return false;for(const k of B)if((k.a===a&&k.b===b)||(k.a===b&&k.b===a))return true;return false},
+  // граф остаётся связным, если убрать перекрытые улицы (плюс кандидата)
+  linked(extra){const N=ROAD.N,bl=this.s.blocks.concat(extra?[extra]:[]),seen=new Set([0]),q=[0];
+    const off=(a,b)=>bl.some(k=>(k.a===a&&k.b===b)||(k.a===b&&k.b===a));
+    while(q.length){const u=q.pop();for(const v of N[u].e)if(!seen.has(v)&&!off(u,v)){seen.add(v);q.push(v)}}return seen.size===N.length},
+  // случайное перекрытие улицы: маршруты экипажей становятся длиннее
+  addBlock(){const s=this.s;if(s.blocks.length>=2)return;const C=ROAD.seg.filter(([a,b])=>!this.blocked(a,b)&&this.linked({a,b}));if(!C.length)return;
+    const[a,b]=pick(C),A=ROAD.N[a],B=ROAD.N[b],bridge=A.x!==B.x&&Math.abs(A.x-B.x)>100;
+    s.blocks.push({a,b,age:0,ttl:rnd(28,42),br:bridge});
+    const m=bridge?'Перекрыт мост — маршруты длиннее':'Улица перекрыта — экипажи едут в объезд';this.log(m);say(m,2.4);beep(240,.12,.05,'square');vib(20);this.reroute()},
+  tickBlocks(dt){const s=this.s;s.blkT-=dt;if(s.blkT<=0&&!s.tutOn){s.blkT=rnd(28,46);if(Math.random()<.85)this.addBlock()}
+    let gone=false;for(const k of s.blocks){k.age+=dt;if(k.age>k.ttl)gone=true}
+    if(gone){s.blocks=s.blocks.filter(k=>k.age<=k.ttl);this.log('Улица снова открыта')}},
+  // машины в пути пересчитывают маршрут от ближайшего перекрёстка
+  reroute(){for(const u of this.s.units){if(u.pi>=u.path.length||u.pi<1)continue;
+      const prev=u.path[u.pi-1],nxt=u.path[u.pi],ip=ROAD.id[prev[0]+','+prev[1]],inx=ROAD.id[nxt[0]+','+nxt[1]];
+      if(ip==null||inx==null)continue;
+      const src=this.blocked(ip,inx)?ip:inx,N=ROAD.N[src],P=u.st==='go'?u.P:{x:ROAD.N[u.src].x,y:ROAD.N[u.src].y,a:u.src,b:u.src};
+      u.path=[[u.x,u.y]].concat(this.route(src,P));u.pi=1}},
   proj(x,y){let best=null,bd=1e9;for(const[a,b]of ROAD.seg){const A=ROAD.N[a],B=ROAD.N[b];let px,py;
       if(A.y===B.y){px=clamp(x,Math.min(A.x,B.x),Math.max(A.x,B.x));py=A.y}else{px=A.x;py=clamp(y,Math.min(A.y,B.y),Math.max(A.y,B.y))}
       const d=Math.hypot(px-x,py-y);if(d<bd){bd=d;best={x:px,y:py,a,b}}}return best},
   dij(src){const N=ROAD.N,d=N.map(()=>1e9),pv=N.map(()=>-1),dn=N.map(()=>0);d[src]=0;
     for(;;){let u=-1,bd=1e9;for(let i=0;i<N.length;i++)if(!dn[i]&&d[i]<bd){bd=d[i];u=i}if(u<0)break;dn[u]=1;
-      for(const v of N[u].e){const w=Math.abs(N[u].x-N[v].x)+Math.abs(N[u].y-N[v].y);if(d[u]+w<d[v]){d[v]=d[u]+w;pv[v]=u}}}return{d,pv}},
+      for(const v of N[u].e){if(this.blocked(u,v))continue;const w=Math.abs(N[u].x-N[v].x)+Math.abs(N[u].y-N[v].y);if(d[u]+w<d[v]){d[v]=d[u]+w;pv[v]=u}}}return{d,pv}},
   route(src,P){const{d,pv}=this.dij(src),N=ROAD.N,A=N[P.a],B=N[P.b];
     const da=d[P.a]+Math.abs(A.x-P.x)+Math.abs(A.y-P.y),db=d[P.b]+Math.abs(B.x-P.x)+Math.abs(B.y-P.y);
     const ids=[];for(let v=da<=db?P.a:P.b;v!==-1;v=pv[v])ids.unshift(v);
@@ -180,7 +199,7 @@ const Op={
     if(s.wave<=0&&s.foci.length<6){s.wave=rnd(.85,1.15)*(22-6*k);this.addFocus(s.t>80?3:2);const nf=s.foci[s.foci.length-1];this.pop(nf.x,nf.y-24,'НОВЫЙ ОЧАГ','#ff6b5c',1);this.log('Новый очаг заражения');say('Новый очаг заражения!',1.8);beep(210,.2,.05,'sawtooth');vib(25)}
     if(!s.foci.length&&s.calls.length<2&&s.t>2&&s.wave>4){s.wave=rnd(7,10);this.addFocus(2);const nf=s.foci[s.foci.length-1];if(nf){nf.t=rnd(1.5,3.5);this.pop(nf.x,nf.y-24,'НОВЫЙ ОЧАГ','#ff6b5c',1);this.log('Очаг вспыхнул заново');say('Вспышка в новом квартале!',1.8)}}
     s.amb-=dt;if(s.amb<=0){s.amb=rnd(.8,1.2)*(16-6*k);this.newCall(null)}
-    this.tickCalls(dt);this.tickUnits(dt);if(s.cut)return;
+    this.tickBlocks(dt);this.tickCalls(dt);this.tickUnits(dt);if(s.cut)return;
     for(const f of s.fx)f.t+=dt;s.fx=s.fx.filter(f=>f.t<f.d);
     if(s.t>=s.dur){this.finish();return}
     this.uiTick(dt);
@@ -351,6 +370,13 @@ const Op={
       Post.glow(rx,ry+6,26,'76,201,192',.1);otx('ЦУ',BASE.x,BASE.y+14,'#4cc9c0',10,'center')}
     // части служб
     this.stations(t);
+    // перекрытые улицы: заграждение и подсвеченный участок
+    for(const k of s.blocks){const A=ROAD.N[k.a],B=ROAD.N[k.b],mx=(A.x+B.x)/2,my=(A.y+B.y)/2,hz=A.y===B.y,pr=clamp(1-k.age/k.ttl,0,1);
+      cx.save();cx.strokeStyle='rgba(255,70,50,'+(.22+.1*Math.sin(t*5)).toFixed(2)+')';cx.lineWidth=4;cx.beginPath();cx.moveTo(A.x,A.y);cx.lineTo(B.x,B.y);cx.stroke();cx.restore();
+      const w=hz?4:12,h=hz?12:4,bx=Math.round(mx-w/2),by=Math.round(my-h/2);cx.fillStyle='rgba(0,0,0,.4)';cx.fillRect(bx+1,by+1,w,h);
+      for(let i=0;i<(hz?h:w);i+=2){cx.fillStyle=(i/2)%2?'#f2f2f2':'#e8432f';if(hz)cx.fillRect(bx,by+i,w,2);else cx.fillRect(bx+i,by,2,h)}
+      Post.glow(mx,my,10,'255,120,60',.25+.1*Math.sin(t*6));
+      cx.fillStyle='rgba(0,0,0,.5)';cx.fillRect(Math.round(mx)-7,Math.round(my)+8,14,2);cx.fillStyle='#ff8a3a';cx.fillRect(Math.round(mx)-7,Math.round(my)+8,14*pr,2)}
     // маршруты и машины служб (по улицам, по правой полосе)
     for(const u of s.units){if(u.pi>=u.path.length)continue;const col=SVC[u.svc].c;
       cx.save();cx.setLineDash([3,4]);cx.lineDashOffset=-t*22;cx.strokeStyle=col;cx.globalAlpha=u.st==='go'?.6:.25;cx.lineWidth=1;cx.beginPath();cx.moveTo(u.x,u.y);for(let i=u.pi;i<u.path.length;i++)cx.lineTo(u.path[i][0],u.path[i][1]);cx.stroke();cx.restore();
