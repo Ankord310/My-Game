@@ -6,13 +6,12 @@ const RG=[
 const RE=[[0,1],[0,2],[0,3],[0,4],[0,5],[1,2],[1,3],[4,2],[4,5],[3,5]];
 // Итоги этапа 3 → стартовые условия штаба: эвакуированные, цена жестоких приказов, обиды медиков, разрушенные мосты, удержанный город
 const Link34=()=>{
-  const sv=G.s3||0,k=G.s3k||0,cr=G.cruelty||0,br=G.bridges||0,ms=G.medStrikes||0,L=[];
-  const pool=Math.min(2,Math.floor(sv/900)),gov=Math.round(Math.max(-20,clamp(sv/2600*12,0,12)-Math.min(20,k/15)-Math.min(10,cr*2.5))),pc=3-Math.min(2,ms),fund=3-Math.min(2,br),res=G.contain3?4:0;
+  const tot=G.s3t||1325,sv=G.s3||0,k=G.s3k||0,vl=G.s3v||0,L=[];
+  const pool=Math.min(2,Math.floor(sv/(tot*.3))),gov=Math.round(Math.max(-20,clamp(sv/tot*16,0,12)-Math.min(20,k/tot*45))),pc=3,fund=3-Math.min(2,Math.floor(vl/2)),res=G.contain3?4:0;
   if(pool)L.push('эвакуированные пополнили резервы: +'+pool+' бр.');
   if(gov>=3)L.push('губернаторы благодарны: +'+gov+' к доверию');else if(gov<=-3)L.push('губернаторы помнят потери: '+gov+' к доверию');
-  if(pc<3)L.push('медики обижены: договоров '+pc);
-  if(fund<3)L.push('мосты разрушены: финансирование '+fund);
-  if(res)L.push('город удержан: исследования +'+res+'%');
+  if(fund<3)L.push('потеряна техника: финансирование '+fund);
+  if(res)L.push('эвакуация удалась: исследования +'+res+'%');
   return{pool,gov,pc,fund,res,L}};
 const Hq={
   tut:'s4',tutAuto:false,rs:2,map:null,lt:0,

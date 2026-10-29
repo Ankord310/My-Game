@@ -32,10 +32,10 @@ const Story={
     {img:'siege',fx:'embers dust',tag:'ЭТАП 03 · КОМАНДОВАНИЕ',text:'Район закрыт для гражданских. Блокпосты, колонны, вертолёты — теперь это ваши решения. Закрытый мост сдержит заражённых и одновременно отрежет путь эвакуации.'},
     {img:'convoy',fx:'dust',tag:'ЭТАП 03 · ЦЕНА ПРИКАЗА',text:'Каждый автобус — это сотни жизней и риск попасть в зону заражения. Каждый взрыв — быстрый результат и тяжёлое молчание медиков на следующий день.',btn:'Принять командование ▶'}],
   afterS3:()=>{
-    const ok=G.contain3,sc=clamp((G.s3||0)/2600*55+(ok?30:0)+G.support*.15-(G.s3k||0)/40-G.bridges*3,0,100),gr=gradeBy(sc);
+    const ok=G.contain3,tot=G.s3t||970,sc=clamp((G.s3||0)/tot*90+(ok?8:0)+G.support*.1-(G.s3k||0)/tot*10-(G.s3v||0)*1.5,0,100),gr=gradeBy(sc);
     return[
-      {img:'bridge',fx:'embers',res:{k:'ИТОГИ ЭТАПА 03 · ВОЕННЫЙ',grade:gr,rows:[['Эвакуировано',G.s3||0,clamp((G.s3||0)/2600,0,1),'g'],['Погибло мирных',G.s3k||0,clamp((G.s3k||0)/600,0,1),'r'],['Доверие',Math.round(G.support)+'%',G.support/100,G.support<25?'r':'a'],['Заражение центра',Math.round((G.epiInf||0)*100)+'%',G.epiInf||0,'r'],['Мостов взорвано',G.bridges,clamp(G.bridges/3,0,1),'a']],
-        notes:[ok?'Центр удержан. Город дышит.':'Центр потерян: кризис выходит на уровень страны.',(G.s3k||0)>150?'Жестокие приказы дорого обошлись доверию людей.':'Потери среди мирных остались небольшими.'].concat(Link34().L.length?['Для штаба: '+Link34().L.join('; ')+'.']:[])}},
+      {img:'bridge',fx:'embers',res:{k:'ИТОГИ ЭТАПА 03 · ЭВАКУАЦИЯ',grade:gr,rows:[['Эвакуировано',(G.s3||0)+' / '+tot,clamp((G.s3||0)/tot,0,1),'g'],['Погибло мирных',G.s3k||0,clamp((G.s3k||0)/tot,0,1),'r'],['Доверие',Math.round(G.support)+'%',G.support/100,G.support<25?'r':'a'],['Заражение центра',Math.round((G.epiInf||0)*100)+'%',G.epiInf||0,'r'],['Техники потеряно',G.s3v||0,clamp((G.s3v||0)/6,0,1),'a']],
+        notes:[ok?'Центр удержан. Город дышит.':'Центр потерян: кризис выходит на уровень страны.',(G.s3v||0)>=3?'Слишком много техники потеряно: для штаба это удар.':(G.s3k||0)>tot*.3?'Много людей погибло: доверие упало.':'Потери остались терпимыми.'].concat(Link34().L.length?['Для штаба: '+Link34().L.join('; ')+'.']:[])}},
       ok?{img:'country',fx:'scan',tag:'ЭТАП 03 · ВЫВОД',text:'Город удержан. На картах штаба — тихие районы, но координаты промзоны по-прежнему горят красным. Можно рискнуть и вернуться в «Эпицентр» — или передать кризис штабу.',choices:[{l:'Вернуться в «Эпицентр» (риск выше)',a:'raidI',d:'6|military',c:'pri'},{l:'Передать штабу',a:'intro4'}]}
         :{img:'country',fx:'scan red',tag:'ЭТАП 03 · ВЫВОД',text:'Город потерян. Заражение выходит за границы области: вопрос больше не в одном районе, а в судьбе всей страны.',choices:[{l:'Кризис национального уровня ▶',a:'intro4',c:'pri'}]}];
   },
@@ -71,8 +71,8 @@ const ENDS=[
 const ACHS=[
   {k:'clean',n:'Чистый выход',d:'Выберитесь из комплекса без единого укуса.',i:'✚'},
   {k:'s2a',n:'Диспетчер года',d:'Получите оценку A на этапе «Оператор».',i:'☎'},
-  {k:'bridges',n:'Мосты целы',d:'Удержите центр города, не взорвав ни одного моста.',i:'⌗'},
-  {k:'s3big',n:'Колонны на выходе',d:'Эвакуируйте более 2000 человек на этапе «Военный».',i:'⛟'},
+  {k:'bridges',n:'Без потерь техники',d:'Эвакуируйте больше половины людей, не потеряв ни одной машины.',i:'⌗'},
+  {k:'s3big',n:'Колонны на выходе',d:'Эвакуируйте более 800 человек на этапе «Эвакуация».',i:'⛟'},
   {k:'raid',n:'Назад в «Эпицентр»',d:'Вернитесь в здание комплекса для финального рейда.',i:'⚑'},
   {k:'all',n:'Все пути',d:'Откройте все пять концовок.',i:'★'}];
 const ACH_N={};for(const a of ACHS)ACH_N[a.k]=a.n;
@@ -81,7 +81,7 @@ const Flow={
   menu(){this.clear();setMode(Title);Title.home()},
   afterSci(){this.clear();if((G.bites||0)===0)Prog.ach('clean');Snd.play('op');Slides.play(Story.afterS1(),()=>ACT.go2())},
   afterOp(){this.clear();G.support=clamp(60-G.losses*1.5-Math.min(8,(G.s2waste||0)*1.5),25,90);if(G.contain2&&(G.s2loss||0)<=4)Prog.ach('s2a');Slides.play(Story.afterS2(),null)},
-  afterMil(){this.clear();if(G.contain3&&!G.bridges)Prog.ach('bridges');if((G.s3||0)>2000)Prog.ach('s3big');Slides.play(Story.afterS3(),null)},
+  afterMil(){this.clear();if(G.contain3&&!G.s3v)Prog.ach('bridges');if((G.s3||0)>800)Prog.ach('s3big');Slides.play(Story.afterS3(),null)},
   raidIntro(n,role){this.clear();Snd.play('raid');Prog.raid();Prog.ach('raid');G.role=role;Slides.play(Story.raid(n,role),()=>{Maze.cfg={kind:'raid',diff:n};setMode(Maze)})},
   raidFail(){this.clear();card({img:'bunker',k:'РЕЙД ПРОВАЛЕН',t:'Группа не дошла до хранилища',p:['Планировка здания каждый раз новая. Попробуйте ещё раз — или вернитесь в меню.'],b:[{l:'Повторить рейд',a:'goRaid',d:String(Maze.cfg.diff),c:'pri'},{l:'В меню',a:'menu'}]})},
   cure(){this.ending('cure')},

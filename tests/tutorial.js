@@ -17,7 +17,7 @@ const vw=+process.argv[2]||1000,vh=+process.argv[3]||459;
    if(st.i<=1||st.btn)await pg.screenshot({path:OUT+`co_${nm}_${st.i}_${vw}.png`});
    if(st.btn)await pg.click('#coach .cgo');else if(st.R)await pg.mouse.click((st.R.l+st.R.r)/2,(st.R.t+st.R.b)/2);else{console.log(nm,'step',st.i,'NO TARGET');await pg.waitForTimeout(500)}
    await pg.waitForTimeout(nm==='s2'&&(st.i===1||st.i===3)?2600:350);
-   if(nm==='s2'&&st.i===3){for(let k=0;k<25;k++){if(!(await pg.evaluate(()=>Coach.i===3)))break;await pg.waitForTimeout(400)}}
+   if((nm==='s2'&&st.i===3)||(nm==='s3'&&st.i===2)){for(let k=0;k<25;k++){if(!(await pg.evaluate(()=>Coach.i===3)))break;await pg.waitForTimeout(400)}}
   }
   const r=await pg.evaluate(M=>{const m=eval(M);return{coach:Coach.on,done:Prog.d.tut,t:m.s.t}},M);
   console.log(nm,'steps',n,JSON.stringify(r));

@@ -1,4 +1,4 @@
-// Бот-симулятор баланса. node balance.js <этап 2|3> <реакция,с> <точность> <прогонов>. Пример: node balance.js 2 1.6 .92 8
+// Бот-симулятор баланса. node balance.js <этап 2|3> <реакция,с> <точность> <прогонов> [apc — для этапа 3: бот использует БТР]. Пример: node balance.js 2 1.6 .92 8
 const path=require('path'),OUT=path.resolve(__dirname,'out')+'/',GAME='file://'+path.resolve(__dirname,'../game/index.html'),WEB='file://'+path.resolve(__dirname,'../dist/Epicenter-web.html');
 require('fs').mkdirSync(OUT,{recursive:true});
 // Симуляция «играющего» бота для этапов 2 и 3: python-free, прямой вызов Op.update/Mil.update
@@ -8,7 +8,7 @@ const stage=+process.argv[2]||2, react=+process.argv[3]||1.6, acc=+process.argv[
  const b=await chromium.launch();
  const pg=await (await b.newContext({viewport:{width:960,height:540}})).newPage();
  const errs=[];pg.on('pageerror',e=>errs.push(e.stack));
- await pg.goto(GAME);await pg.waitForTimeout(400);
+ await pg.goto(GAME);await pg.waitForTimeout(400);if(process.argv[6]==='apc'||process.argv[5]==='apc')await pg.evaluate(()=>{window.BOT_APC=true});
  const res=await pg.evaluate(({stage,react,acc,N})=>{
   Flow.afterOp=()=>{};Flow.afterMil=()=>{};Tut.on=false;
   const out=[];
@@ -38,28 +38,20 @@ const stage=+process.argv[2]||2, react=+process.argv[3]||1.6, acc=+process.argv[
       }
       out.push({t:Math.round(tt),idle:Math.round(idle),foci:s.foci.length,loss:s.losses,ok:s.ok,fail:s.fail,calls:seen.size,avgPend:+(calls/tt).toFixed(1),maxPend:maxCalls,contain:G.contain2,trace:cum.join(' ')});
     }else{
-      OPT.tips=false;newGame({fociLeft:3,losses:8,support:50,ratio:3});Mil.enter();const s=Mil.s;
-      let nextAct=2,tt=0,idleBus=0,peakInf=0;const dt=.05;let sqT=0;const trace=[];
-      while(!s.end&&tt<400){
-        Mil.update(dt);tt+=dt;
-        if(s.buses.length===0)idleBus+=dt;
-        if(Math.floor(tt)%25===0&&Math.abs(tt-Math.round(tt))<dt/2)trace.push(Math.round(tt)+':B'+Math.round(s.n[1].inf*100)+' A'+Math.round(s.n[0].inf*100)+' C'+Math.round(s.n[2].inf*100)+' E'+Math.round(s.n[4].inf*100)+' sv'+s.saved);
-        if(tt>=nextAct){
-          const mode=(typeof window.BOT_MODE==='string')?window.BOT_MODE:'active';
-          let did=false;
-          // отряды: перераспределять каждые ~20 c
-          if(mode==='active'&&tt>sqT){sqT=tt+12;for(const o of s.n)if(o.sq){s.sqPool+=o.sq;o.sq=0}
-            const ds=s.n.map((o,i)=>[o,i]).filter(([o])=>o.k==='d'&&o.pop>0).sort((a,b)=>b[0].inf-a[0].inf);
-            for(let q=0;q<3&&ds.length;q++){s.sel=ds[q%Math.min(2,ds.length)][1];Mil.act('sq+')}}
-          // вертолёт
-          if(!did&&s.heli<=0&&s.t>=30&&s.sup>=25){const c=s.n.map((o,i)=>[o,i]).filter(([o])=>o.k==='d'&&o.pop*(1-o.inf)>30).sort((a,b)=>b[0].pop*(1-b[0].inf)-a[0].pop*(1-a[0].inf))[0];if(c){s.sel=c[1];Mil.act('heli');did=true}}
-          // автобус
-          if(!did&&s.buses.length<3){const c=s.n.map((o,i)=>[o,i]).filter(([o])=>o.k==='d'&&!o.blk&&o.pop*(1-o.inf)>=20).sort((a,b)=>b[0].pop*(1-b[0].inf)*(.6+b[0].inf)-a[0].pop*(1-a[0].inf)*(.6+a[0].inf))[0];if(c){s.sel=c[1];Mil.act('bus');did=true}}
-          nextAct=tt+(did?react:.5);
-        }
-      }
-      let pp=0;for(const o of s.n)if(o.k==='d')pp+=o.pop;
-      out.push({t:Math.round(tt),saved:s.saved,killed:s.killed,B:Math.round(s.n[1].inf*100),A:Math.round(s.n[0].inf*100),C:Math.round(s.n[2].inf*100),E:Math.round(s.n[4].inf*100),popLeft:pp,idleBus:Math.round(idleBus),sup:Math.round(s.sup),contain:G.contain3,trace:trace.join(' | ')});
+      // этап 3 «Эвакуация»: бот отправляет свободную технику к самой выгодной группе (польза/время, без смертельных маршрутов); с флагом apc ставит БТР на пути толп
+      OPT.tips=false;Prog.d.tut={s3:1};newGame({fociLeft:3,losses:8,support:60,ratio:3});Mil.enter();const s=Mil.s;let next=1,tt=0;
+      while(!s.end&&tt<400){Mil.update(.05);tt+=.05;
+        if(tt>=next){next=tt+react;
+          for(const v of s.v){if(v.st!=='ready'||v.d.apc)continue;let best=null,bs=-1;
+            for(const g of s.g){if(g.st!=='wait'||g.people<=0)continue;if(s.v.some(q=>q!==v&&q.tgt===g&&(q.st==='go'||q.st==='load')&&!q.d.apc))continue;
+              s.sel=v.id;Mil.setTarget({k:'g',id:g.id});const pr=Mil.preview();if(!pr||pr.risk>=2)continue;
+              const sc=Math.min(v.d.cap,g.people)*(g.doom<40?1.4:1)/(pr.eta+4)/(1+pr.risk*1.2);if(sc>bs){bs=sc;best=g}}
+            if(best){s.sel=v.id;Mil.setTarget({k:'g',id:best.id});Mil.go()}}
+          if(window.BOT_APC){for(const v of s.v){if(!v.d.apc||v.st!=='ready')continue;
+              const h=s.h.find(h=>h.st==='attack'&&h.tgt&&h.tgt.k==='g'&&!s.v.some(q=>q.d.apc&&q.st!=='ready'&&q.st!=='dead'&&Math.hypot(q.x-h.x,q.y-h.y)<40));
+              if(h){s.sel=v.id;Mil.setTarget({k:'n',id:Mil.nodeAt(h.x,h.y)});Mil.go()}}
+            for(const v of s.v)if(v.d.apc&&v.st==='hold'&&!s.h.some(h=>Math.hypot(h.x-v.x,h.y-v.y)<45)){s.sel=v.id;Mil.recall()}}}}
+      out.push({t:Math.round(tt),saved:Math.round(s.saved),killed:Math.round(s.killed),total:s.total,pct:Math.round(100*s.saved/s.total),vlost:s.vlost,lostGroups:s.g.filter(g=>g.st==='lost').length,contain:G.contain3});
     }
   }
   return out;
