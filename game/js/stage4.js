@@ -4,13 +4,25 @@ const RG=[
   {id:'cap',nm:'Столичный округ',x:150,y:142},{id:'n',nm:'Север',x:146,y:70},{id:'w',nm:'Запад',x:80,y:130,lx:-14},
   {id:'e',nm:'Восток',x:232,y:112},{id:'s',nm:'Юг',x:118,y:212},{id:'c',nm:'Побережье',x:230,y:200}];
 const RE=[[0,1],[0,2],[0,3],[0,4],[0,5],[1,2],[1,3],[4,2],[4,5],[3,5]];
+// Итоги этапа 3 → стартовые условия штаба: эвакуированные, цена жестоких приказов, обиды медиков, разрушенные мосты, удержанный город
+const Link34=()=>{
+  const sv=G.s3||0,k=G.s3k||0,cr=G.cruelty||0,br=G.bridges||0,ms=G.medStrikes||0,L=[];
+  const pool=Math.min(2,Math.floor(sv/900)),gov=Math.round(Math.max(-20,clamp(sv/2600*12,0,12)-Math.min(20,k/15)-Math.min(10,cr*2.5))),pc=3-Math.min(2,ms),fund=3-Math.min(2,br),res=G.contain3?4:0;
+  if(pool)L.push('эвакуированные пополнили резервы: +'+pool+' бр.');
+  if(gov>=3)L.push('губернаторы благодарны: +'+gov+' к доверию');else if(gov<=-3)L.push('губернаторы помнят потери: '+gov+' к доверию');
+  if(pc<3)L.push('медики обижены: договоров '+pc);
+  if(fund<3)L.push('мосты разрушены: финансирование '+fund);
+  if(res)L.push('город удержан: исследования +'+res+'%');
+  return{pool,gov,pc,fund,res,L}};
 const Hq={
   tut:'s4',tutAuto:false,rs:2,map:null,lt:0,
   enter(){
     Snd.play('hq');this.mkMap();
     const r=RG.map(o=>({...o,inf:.12+.25*G.cityInf,sup:60,br:0,lift:0,di:0,tk:[],pf:0}));
     r[0].inf=clamp(.5+.4*(G.epiInf||.5),.5,.95);r[0].sup=55;r.forEach(o=>o.di=o.inf);
-    const s=this.s={m:1,t:0,mt:6,dur:36,r,sel:0,pool:Math.max(5,10-Math.floor(G.losses/12)),fr:0,front:false,res:G.research||0,fund:3,pc:3,nat:clamp(G.support,25,90),emer:false,head:false,offer:false,log:[],end:false,cd:{aid:0,data:0},ev:false,sig:'',fx:[],ftk:[0,0,0],clouds:[{x:40,y:70,v:4,s:1},{x:180,y:170,v:3,s:1.2},{x:290,y:40,v:5,s:.9},{x:100,y:230,v:3.5,s:1}]};
+    const LK=Link34();r.forEach((o,i)=>{o.sup=clamp(o.sup+LK.gov,5,95)});
+    const s=this.s={m:1,t:0,mt:6,dur:36,r,sel:0,pool:Math.max(5,10-Math.floor(G.losses/12))+LK.pool,fr:0,front:false,res:Math.min(100,(G.research||0)+LK.res),fund:LK.fund,pc:LK.pc,nat:clamp(G.support,25,90),emer:false,head:false,offer:false,log:[],end:false,cd:{aid:0,data:0},ev:false,sig:'',fx:[],ftk:[0,0,0],clouds:[{x:40,y:70,v:4,s:1},{x:180,y:170,v:3,s:1.2},{x:290,y:40,v:5,s:.9},{x:100,y:230,v:3.5,s:1}]};
+    for(const m of LK.L.slice(0,3).reverse())this.log(m);
     ctrl(false);this.ui();this.hudUpd();this.lt=performance.now();if(Coach.need('s4'))this.coach();else say('Вы — начальник штаба реагирования. Столичный округ — тяжёлый эпицентр.',5);
   },
   exit(){},

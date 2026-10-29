@@ -27,7 +27,7 @@ const OPT=(()=>{const o={vib:true,mute:false,tips:true,dev:false};try{Object.ass
 const TOUCH=(()=>{try{return matchMedia('(pointer:coarse)').matches}catch(e){return true}})(),HINT=(t,k)=>TOUCH?t:k;
 document.documentElement.classList.toggle('kbd',!TOUCH);
 function saveOpt(){try{Store.set('epi.opt',JSON.stringify(OPT))}catch(e){}}
-function newGame(o){Object.assign(G,{delay:0,foci:1,fociLeft:0,losses:0,saved:0,support:60,cruelty:0,home:'',bridges:0,cityInf:.3,role:'',route:[],research:0},o||{})}
+function newGame(o){Object.assign(G,{delay:0,foci:1,fociLeft:0,losses:0,saved:0,support:60,cruelty:0,home:'',bridges:0,cityInf:.3,role:'',route:[],research:0,s2waste:0,s3:0,s3k:0,medStrikes:0},o||{})}
 newGame();
 // ---------- layout ----------
 function fit(){

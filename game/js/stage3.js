@@ -19,7 +19,7 @@ const Mil={
     const n=MN.map(o=>({...o,inf:0,sq:0,pol:0,quar:0,qcd:0,blk:0,dead:0,cap:o.pop,dp:o.pop,di:0}));
     const L=G.fociLeft||0;n[1].inf=clamp(.30+.04*L,.30,.7);n[0].inf=n[2].inf=clamp(.04+.02*L,.04,.25);
     n.forEach(o=>{if(o.k==='d'){const R=Maps.D3[o.id];o.dots=Array.from({length:72},()=>({x:rnd(R[0]+8,R[2]-8),y:rnd(R[1]+8,R[3]-8),vx:rnd(-9,9),vy:rnd(-9,9),ph:rnd(0,6)}))}});
-    const s=this.s={fxs:[],shake:0,t:0,dur:200,n,sel:1,buses:[],saved:0,killed:0,sup:G.support,cruel:0,sqPool:3-((G.s2waste||0)>=6?1:0),polPool:2,med:0,medWarn:false,sirT:rnd(3,6),panT:2,ct:'bus',fuel:6,ev:null,evT:rnd(26,38),ret:[],heli:0,log:[],end:false,hudT:0,esc:false,uiSig:'',smoke:[],scars:[],dsaved:0,flash:[],ob:26};
+    const s=this.s={fxs:[],shake:0,t:0,dur:200,n,sel:1,buses:[],saved:0,killed:0,sup:G.support,cruel:0,sqPool:3-((G.s2waste||0)>=6?1:0),polPool:2,med:0,medWarn:false,sirT:rnd(3,6),panT:2,ct:'bus',fuel:6,ev:null,evT:rnd(20,30),ret:[],heli:0,log:[],end:false,hudT:0,esc:false,uiSig:'',smoke:[],scars:[],dsaved:0,flash:[],ob:26};
     {const w2=G.s2waste||0;if(w2>=3)this.log('Штаб: службы измотаны ложными вызовами'+(w2>=6?' — отрядов меньше':''));
       if(G.support<40)this.log('Доверие людей низкое: медики могут отказаться работать')}
     ctrl(false);this.ui();this.hudUpd();this.lt=performance.now();if(Coach.need('s3'))this.coach();else say('Вы — командир. Эвакуируйте людей и сдерживайте заражённые районы.',4.5);
@@ -78,13 +78,14 @@ const Mil={
   },
   evStart(){
     const s=this.s,D=s.n.map((o,i)=>[o,i]).filter(([o])=>o.k==='d'&&o.pop>80),B=s.n.map((o,i)=>[o,i]).filter(([o])=>o.k==='b'&&!o.dead);
-    const L=[];if(B.length)L.push('jam');if(D.length)L.push('loot','press');if(s.t>55&&D.length)L.push('order');if(!L.length)return;
-    const k=pick(L),e={k,t:0,ttl:this.EV[k].ttl};
+    const L=[];if(B.length)L.push('jam');if(D.length)L.push('loot','press');if(s.t>55&&D.length&&Math.max(...D.map(d=>d[0].inf))>.3)L.push('order');
+    const F=L.filter(x=>x!==s.lastEv);if(!F.length)return;
+    const k=pick(F),e={k,t:0,ttl:this.EV[k].ttl};s.lastEv=k;
     if(k==='jam'){const b=pick(B);e.i=b[1];e.nm=b[0].nm}
     else if(k==='order'){D.sort((a,b)=>b[0].inf-a[0].inf);const d=D[0];e.i=d[1];e.nm=d[0].nm}
     else{const d=pick(D);e.i=d[1];e.nm=d[0].nm}
     if(k==='jam')s.jam={i:e.i,t:e.ttl};
-    if(k==='loot'&&s.n[e.i].pol>0){this.log('Полиция пресекла мародёрство: '+e.nm);s.evT=rnd(26,40);return}
+    if(k==='loot'&&s.n[e.i].pol>0){this.log('Полиция пресекла мародёрство: '+e.nm);s.evT=rnd(22,34);return}
     s.ev=e;say('Событие: '+this.EV[k].t(e),2.5);beep(420,.12,.05,'triangle');setTimeout(()=>beep(560,.12,.05,'triangle'),130);vib([30,30,30]);this.evUi()},
   evAct(c){
     const s=this.s,e=s.ev;if(!e||s.end)return;const o=s.n[e.i];
@@ -101,12 +102,12 @@ const Mil={
       if(c===0){this.doArt(o)}
       else{s.heli=Math.max(s.heli,25);this.log('Вы отказали генералу: вертолёты переброшены')}
       s.ev=null}
-    s.evT=rnd(26,40);this.evUi();this.ui()},
+    s.evT=rnd(22,34);this.evUi();this.ui()},
   evTick(dt){
     const s=this.s;if(s.ret.length){for(const r of s.ret)r.t-=dt;const n=s.ret.filter(r=>r.t<=0).length;if(n){s.ret=s.ret.filter(r=>r.t>0);s.sqPool+=n;this.log('Отряд вернулся в резерв')}}
     if(s.jam){s.jam.t-=dt;if(s.jam.t<=0){s.jam=null;this.log('Пробка на мосту рассосалась')}}
     if(s.ev){s.ev.t+=dt;if(s.ev.t>=s.ev.ttl){s.ev.def=this.EV[s.ev.k].def;this.evAct(this.EV[s.ev.k].def)}else{s.evUiT=(s.evUiT||0)-dt;if(s.evUiT<=0){s.evUiT=.25;this.evUi()}}}
-    else if(s.t>16){s.evT-=dt;if(s.evT<=0){s.evT=rnd(26,40);this.evStart()}}},
+    else if(s.t>16){s.evT-=dt;if(s.evT<=0){s.evT=rnd(22,34);this.evStart()}}},
   evUi(){
     const b=$('#evbox');if(!b)return;const s=this.s,e=s.ev;
     if(!e){b.style.display='none';b._raw=null;b.innerHTML='';return}
@@ -121,7 +122,7 @@ const Mil={
     for(const[a,b]of ME){const A=s.n[a],B=s.n[b];if(A.blk||B.blk)continue;const d=.028*(A.inf-B.inf)*dt*(A.k==='s'||B.k==='s'?.3:1);A.inf-=d;B.inf+=d;if(A.k==='b')A.inf=Math.max(0,A.inf);}
     for(const o of s.n)if(o.blk&&o.inf>.25&&Math.random()<dt*.025*(.6+.8*nk)*(o.insp?.25:1)*(1-.3*o.pol)){const nb=this.nb(s.n.indexOf(o)).filter(i=>!s.n[i].blk);if(nb.length){const q=s.n[pick(nb)];q.inf=clamp(q.inf+.07,0,1);s.sup=Math.max(0,s.sup-1);this.log('Скрытые носители прошли блокпост у '+o.nm);say('Скрытые носители прошли блокпост!',2.2);beep(160,.15,.05,'sawtooth')}}
     if(s.med>0){s.med-=dt;if(s.med<=0){s.med=0;this.log('Медики вернулись к работе');this.ui()}}
-    else if(s.sup<30&&Math.random()<dt*.06*(1+(30-s.sup)/30)){s.med=16;this.log('Медики отказались выполнять приказы');say('Медики отказываются работать: доверие слишком низкое!',3);beep(150,.25,.06,'square');vib([60,40,60]);this.ui()}
+    else if(s.sup<30&&Math.random()<dt*.06*(1+(30-s.sup)/30)){s.med=16;G.medStrikes=(G.medStrikes||0)+1;this.log('Медики отказались выполнять приказы');say('Медики отказываются работать: доверие слишком низкое!',3);beep(150,.25,.06,'square');vib([60,40,60]);this.ui()}
     else if(s.sup<42&&!s.medWarn){s.medWarn=true;say('Медики ропщут: доверие людей падает.',2.6)}
     if(s.sup>=50)s.medWarn=false;
     // паника в сильно заражённых районах: сирены и крики
