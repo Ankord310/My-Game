@@ -12,7 +12,9 @@ const TYP={
   fire:{svc:'fire',w:2,c:['Горит автомобиль у подъезда.','Дым валит из окна третьего этажа.','Горит киоск на остановке.']},
   gas:{svc:'fire',w:1,c:['Сильный запах газа в подъезде.','На стройке прорвало газовую трубу.']},
   dead:{svc:'spec',w:0,c:['Умерший встал и ходит по квартире!','Тело в подъезде шевельнулось и встаёт.','Покойник бросается на санитаров!']},
-  fake:{svc:null,w:.8,c:['В трубке смеются — это розыгрыш.','Ребёнок балуется с телефоном, взрослых дома нет.','Ошиблись номером: всё в порядке.']}
+  heart:{svc:'amb',w:1.2,c:['Мужчине плохо с сердцем, он держится за грудь.','Пожилая женщина задыхается, ей нужен врач.']},
+  theft:{svc:'police',w:1,c:['Угнали машину прямо со двора, виновник ещё рядом.','Взлом квартиры: слышно, как кто-то ходит внутри.']},
+  fake:{svc:null,w:3.6,c:['В трубке смеются — это розыгрыш.','Ребёнок балуется с телефоном, взрослых дома нет.','Ошиблись номером: всё в порядке.','Сработала сигнализация в магазине — продавец просто не так закрыл дверь.','Сосед громко смотрит фильм ужасов, а не «убивают человека».','Звонит скучающий старик: ему просто не с кем поговорить.','Пьяный друг сам нашёлся, пока вы дозванивались.','Датчик дыма сработал на кухне: подгорел ужин.','Школьники пошутили и убежали, адреса не существует.']}
 };
 const DISG=['Мужчина упал на остановке и не дышит. Нужна скорая!','Пожилая женщина потеряла сознание на лавочке, пульса нет.','Сосед лежит в подъезде, не дышит. Приезжайте!'];
 const VAGUE=['Слышны крики за стеной…','В подъезде шумно, я боюсь выходить.','Там что-то случилось, я не пойму что.','Человек на улице ведёт себя странно.','Кричат во дворе, потом всё стихло.','Алло?.. Тут… тут такое… приезжайте!','Связь прерывается, слышен грохот.','Соседка не отвечает, за дверью странные звуки.','Мне кажется, что-то случилось… или нет.','Быстрее, пожалуйста! Адрес… (обрыв связи)'];
@@ -41,7 +43,7 @@ const Op={
     if(!this.map.stn)this.bakeStations();
     this.mkStrip();
     const s=this.s={t:0,dur:180,calls:[],foci:[],units:[],sel:null,losses:0,ok:0,fail:0,id:1,fat:0,lock:0,home:false,log:[],crew:{police:3,amb:3,fire:2,spec:0},specMax:1,nx:5,end:false,fid:1,hudT:0,spawnT:{},fx:[],sig:'',vis:{},wave:24,amb:30,
-      rev:false,revT:0,dz:36,dcall:null,cut:null,tutOn:false,blocks:[],blkT:rnd(26,38)};
+      rev:false,revT:0,dz:36,dcall:null,cut:null,tutOn:false,blocks:[],blkT:rnd(26,38),dupT:rnd(16,26),brkN:0,waste:0};
     this.mkCars();for(let i=0;i<2;i++)this.addFocus(i?2:3);
     ctrl(false);this.ui();this.hudUpd();this.lt=performance.now();
     if(Coach.need('s2'))this.coach();else say('Смена диспетчера началась. Нажимайте на мигающие метки вызовов.',4);
@@ -90,7 +92,7 @@ const Op={
   log(m){const s=this.s;s.log.unshift(m);s.logN=(s.logN||0)+1;s.log.length=Math.min(s.log.length,4)},
   pop(x,y,t,c,big){this.s.fx.push({k:'txt',x,y,t:0,d:big?2.2:1.7,s:t,c:c||'#fff'})},
   pickType(f){const s=this.s,pd=!s.rev?0:s.t<120?.26:.36;if(Math.random()<pd)return'dead';
-    let tot=0;const L=[];for(const k in TYP){const w=TYP[k].w;if(!w||(k==='fake'&&f))continue;L.push([k,w]);tot+=w}
+    let tot=0;const L=[];for(const k in TYP){const w=k==='fake'&&f?1.2:TYP[k].w;if(!w)continue;L.push([k,w]);tot+=w}
     let r=Math.random()*tot;for(const[k,w]of L){if((r-=w)<=0)return k}return'hurt'},
   newCall(f,special,o){
     const s=this.s;o=o||{};let type=o.type||this.pickType(f);
@@ -99,6 +101,7 @@ const Op={
     const c={id:s.id++,x:p.x,y:p.y,type,f:f?f.id:0,age:0,ttl:Math.round(clamp(46-s.t*.08,32,46)),clar:clear,txt:clear?pick(TYP[type].c):'',cl:0,asg:false,addr:pick(STR)+', '+Math.floor(rnd(2,60)),vg:pick(VAGUE),sp:false};
     if(o.disg){Object.assign(c,{type:'dead',shown:'hurt',disg:true,clar:true,txt:pick(DISG),ttl:50})}
     if(special){Object.assign(c,{type:'hurt',ttl:62,sp:true,clar:false,txt:'',addr:'Садовая, 14 (дом Артёма)',vg:'«Артём только что пришёл… он бледный, кашляет и не отвечает. Мне страшно.»'});c.f=0}
+    if(o.dup){const q=this.spot(o.dup,1);Object.assign(c,{type:'fake',dup:true,x:q.x,y:q.y,addr:o.dup.addr,clar:false,txt:'Повторный звонок по этому адресу: экипаж уже выехал.',vg:pick(['Я уже звонил! Почему никто не едет?!','Это снова я, по тому же адресу. Где помощь?!']),ttl:30})}
     if(o.vg)c.vg=o.vg;if(o.txt)c.txt=o.txt;
     s.calls.push(c);beep(900,.07,.04);setTimeout(()=>beep(1250,.06,.035),110);return c},
   shown(c){return c.shown||c.type},
@@ -107,7 +110,7 @@ const Op={
   resolve(c,svc){
     const s=this.s,f=s.foci.find(f=>f.id===c.f);
     if(c.sp){G.home=svc;s.ok++;this.pop(c.x,c.y-14,'ответ получен','#ffd98a',1);this.log('Дом Артёма: ответ службы получен');if(Math.random()<.35){this.addFocus(2,c);this.log('Из дома донёсся шум…')}return}
-    if(c.type==='fake'){this.pop(c.x,c.y-14,'ложный вызов','#9fb3c0');this.log('Ложный вызов: экипаж съездил зря');return}
+    if(c.type==='fake'){s.waste++;this.pop(c.x,c.y-14,c.dup?'дубликат · −5 с':'ложный · −5 с','#ffb35c');this.log(c.dup?'Повторный звонок: экипаж потерял время зря':'Ложный вызов: экипаж потерял время зря');return}
     if(c.disg){s.ok++;s.losses++;G.losses++;s.dcall=null;this.log('«Пациент» напал на экипаж: '+c.addr);this.reveal(c,svc);return}
     if(svc===TYP[c.type].svc){s.ok++;this.pop(c.x,c.y-14,'✓ помощь оказана','#7dffa6');
       if(f){f.hp-=(c.type==='dead'?2:1);f.gr=Math.max(f.gr,18);if(f.hp<=0){s.foci=s.foci.filter(x=>x!==f);s.fx.push({k:'clear',x:f.x,y:f.y,t:0,d:1.4,r:f.r});this.pop(f.x,f.y-22,'ОЧАГ ПОДАВЛЕН','#7dffa6',1);this.log('Очаг подавлен');say('Очаг подавлен!',2);beep(780,.15);vib(30)}}}
@@ -166,9 +169,10 @@ const Op={
     s.crew[svc]>0||(svc=k);s.crew[svc]--;c.asg=true;
     const st=this.map.stn&&this.map.stn[svc],src=st?st.node:ROAD.id['179,239'],N=ROAD.N[src],P=this.proj(c.x,c.y);
     const u={x:N.x,y:N.y,c,svc,k:svc,sp:USP,st:'go',dx:0,dy:-1,src,P,path:this.route(src,P),pi:1};
+    if(!s.tutOn&&Math.random()<.09){u.L0=this.left(u);u.brk=rnd(.3,.7)}
     s.units.push(u);c.eta=this.left(u)/USP;this.ui();beep(480,.06);vib(16)},
   ignore(){const s=this.s,c=s.sel;if(!c||c.asg||s.cut)return;s.calls=s.calls.filter(x=>x!==c);s.sel=null;
-    if(c.type==='fake'){s.ok++;this.pop(c.x,c.y-14,'✓ ложный вызов','#7dffa6');this.log('Ложный вызов отклонён');beep(700,.06)}
+    if(c.type==='fake'){s.ok++;this.pop(c.x,c.y-14,c.dup?'✓ дубликат':'✓ ложный вызов','#7dffa6');this.log(c.dup?'Дубликат отклонён':'Ложный вызов отклонён');beep(700,.06)}
     else if(c.sp){G.home='ignore';this.log('Вы проигнорировали звонок из дома Артёма');this.fail(c,'Звонок проигнорирован',true);this.addFocus(3,c)}
     else{if(c.disg){s.dcall=null;s.dz=s.t+10}this.fail(c,'Звонок проигнорирован',false)}this.ui()},
   clarify(){const s=this.s,c=s.sel;if(!c||c.clar||c.cl>0||s.lock>0||s.cut)return;c.cl=CL;this.ui();beep(520,.05)},
@@ -181,8 +185,14 @@ const Op={
       if(c.type==='fake'){this.log('Ложный вызов сброшен ('+c.addr+')');continue}
       if(c.sp)G.home='ignore';if(c.disg){s.dcall=null;s.dz=s.t+10}this.fail(c,'Вызов остался без ответа',c.type==='dead'||c.sp)}},
   tickUnits(dt){const s=this.s;
-    for(const u of s.units){if(!this.moveU(u,dt))continue;
-      if(u.st==='go'){const c=u.c;s.calls=s.calls.filter(x=>x!==c);if(s.sel===c)s.sel=null;u.st='back';u.path=this.route(u.src,u.P).reverse();u.pi=1;this.resolve(c,u.svc);this.ui();if(s.cut)return}
+    for(const u of s.units){
+      if(u.st==='stay'){u.stay-=dt;if(u.stay<=0){u.st='back';u.path=this.route(u.src,u.P).reverse();u.pi=1}continue}
+      if(u.stop>0){u.stop-=dt;continue}
+      if(u.brk&&u.st==='go'&&this.left(u)<=u.L0*(1-u.brk)){u.brk=0;u.stop=4;s.brkN++;this.pop(u.x,u.y-12,'⚠ поломка','#ffb35c');this.log('Машина службы '+SVC[u.svc].n+' встала: поломка в пути');beep(140,.2,.05,'square');continue}
+      if(!this.moveU(u,dt))continue;
+      if(u.st==='go'){const c=u.c;s.calls=s.calls.filter(x=>x!==c);if(s.sel===c)s.sel=null;
+        if(c.type==='fake'){u.st='stay';u.stay=5}else{u.st='back';u.path=this.route(u.src,u.P).reverse();u.pi=1}
+        this.resolve(c,u.svc);this.ui();if(s.cut)return}
       else{s.crew[u.k]++;u.done=1;this.ui()}}
     s.units=s.units.filter(u=>!u.done)},
   tickCars(dt){for(const c of this.s.cars){if(c.h){c.x+=c.d*c.v*dt;if(c.x>c.x1)c.x=c.x0;if(c.x<c.x0)c.x=c.x1}else{c.y+=c.d*c.v*dt;if(c.y>c.y1)c.y=c.y0;if(c.y<c.y0)c.y=c.y1}}},
@@ -207,6 +217,8 @@ const Op={
     if(s.wave<=0&&s.foci.length<6){s.wave=rnd(.85,1.15)*(22-6*k);this.addFocus(s.t>80?3:2);const nf=s.foci[s.foci.length-1];this.pop(nf.x,nf.y-24,'НОВЫЙ ОЧАГ','#ff6b5c',1);this.log('Новый очаг заражения');say('Новый очаг заражения!',1.8);beep(210,.2,.05,'sawtooth');vib(25)}
     if(!s.foci.length&&s.calls.length<2&&s.t>2&&s.wave>4){s.wave=rnd(7,10);this.addFocus(2);const nf=s.foci[s.foci.length-1];if(nf){nf.t=rnd(1.5,3.5);this.pop(nf.x,nf.y-24,'НОВЫЙ ОЧАГ','#ff6b5c',1);this.log('Очаг вспыхнул заново');say('Вспышка в новом квартале!',1.8)}}
     s.amb-=dt;if(s.amb<=0){s.amb=rnd(.8,1.2)*(16-6*k);this.newCall(null)}
+    s.dupT-=dt;if(s.dupT<=0){s.dupT=rnd(18,30);const U=s.units.filter(u=>u.st==='go'&&!u.c.dupd&&u.c.type!=='fake'&&!u.c.sp&&!u.c.disg);
+      if(U.length&&Math.random()<.7){const u=pick(U);u.c.dupd=1;const d=this.newCall(null,false,{dup:u.c});if(!s.sel)s.sel=d;this.ui()}}
     this.tickBlocks(dt);this.tickCalls(dt);this.tickUnits(dt);if(s.cut)return;
     for(const f of s.fx)f.t+=dt;s.fx=s.fx.filter(f=>f.t<f.d);
     if(s.t>=s.dur){this.finish();return}
@@ -248,7 +260,7 @@ const Op={
       {t:'К концу смены растёт усталость. Кофе её снимает — нажмите.',el:'#panel [data-a=op_coffee]',wait:()=>(s.coffeeN||0)>0},
       {t:'Цель смены: к концу — не больше 4 очагов и 14 потерь. Ложные вызовы можно игнорировать.',btn:'Начать смену ▶'}
     ],()=>{s.tutOn=false;s.lock=0;s.fat=0;if(A&&s.calls.includes(A)&&!A.asg)A.ttl=40;if(B&&s.calls.includes(B)&&!B.asg)B.ttl=40;this.ui();say('Смена началась!',2)})},
-  finish(){const s=this.s;s.end=true;G.fociLeft=s.foci.length;G.ok2=s.ok;G.fail2=s.fail;G.s2loss=s.losses;const ok=s.foci.length<=4&&s.losses<=14;G.contain2=ok;setTimeout(()=>Flow.afterOp(),400)},
+  finish(){const s=this.s;s.end=true;G.fociLeft=s.foci.length;G.ok2=s.ok;G.fail2=s.fail;G.s2loss=s.losses;G.s2waste=s.waste;const ok=s.foci.length<=4&&s.losses<=14;G.contain2=ok;setTimeout(()=>Flow.afterOp(),400)},
   hudUpd(){const s=this.s,gm=s.t/s.dur*720,h=(18+Math.floor(gm/60))%24,m=Math.floor(gm%60);hud(`<b>02 ОПЕРАТОР</b><span class="ob">Смена ${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}</span><span class="r">потери ${Cnt.h('s2.loss',s.losses,'i')}</span><span class="a">очагов ${Cnt.h('s2.foci',s.foci.length,'i')}</span><span>${mmss(s.dur-s.t)}</span>`)},
   ui(soft){
     const s=this.s,c=s.sel,cr=s.crew,lk=s.lock>0;let eta=0;const pv=c&&!c.asg&&s.calls.includes(c)?this.preview(c):null;
