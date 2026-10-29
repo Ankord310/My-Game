@@ -12,6 +12,7 @@ Maps.sh=(h,k)=>{const c=Maps.rgb(h);return'rgb('+Math.min(255,Math.round(c[0]*k)
 Maps.mixc=(a,b,t)=>{const A=Maps.rgb(a),B=Maps.rgb(b);return'rgb('+Math.round(A[0]+(B[0]-A[0])*t)+','+Math.round(A[1]+(B[1]-A[1])*t)+','+Math.round(A[2]+(B[2]-A[2])*t)+')'};
 Maps.lerpc=(A,B,t)=>[A[0]+(B[0]-A[0])*t,A[1]+(B[1]-A[1])*t,A[2]+(B[2]-A[2])*t];
 Maps.poly=(g,p)=>{g.beginPath();g.moveTo(p[0][0],p[0][1]);for(let i=1;i<p.length;i++)g.lineTo(p[i][0],p[i][1]);g.closePath();g.fill()};
+Maps.dimg=(g,im,x,y)=>g.drawImage(im,x,y,im.width/(im.K||1),im.height/(im.K||1));
 Maps.sstep=(a,b,v)=>{const t=Math.max(0,Math.min(1,(v-a)/(b-a)));return t*t*(3-2*t)};
 
 // ---------------------------------------------------------------- здание-параллелепипед
@@ -105,8 +106,8 @@ Maps.barrier=(g,x,y,w,t)=>{x=Math.round(x);y=Math.round(y);
   g.fillStyle='#6f6a52';for(let i=0;i<w-2;i+=3){g.fillRect(x+i,y+3,3,2);g.fillStyle='#8b856a';g.fillRect(x+i,y+3,3,1);g.fillStyle='#6f6a52'}
   if(t!=null&&Math.floor(t*3)%2){g.fillStyle='#ff3b2f';g.fillRect(x+w-1,y-5,2,2)}};
 // мост через реку: настил с перилами, опорами и тенью на воде
-Maps.bridge=(L,Wd)=>{
-  const c=Maps.mk(L+10,Wd+16),g=c.getContext('2d'),x=4,y=6,ht=3;
+Maps.bridge=(L,Wd,K)=>{K=K||1;const rn2=Math.random;
+  const c=Maps.mk((L+10)*K,(Wd+16)*K),g=c.getContext('2d'),x=4,y=6,ht=3;c.K=K;g.K=K;g.setTransform(K,0,0,K,0,0);
   g.fillStyle='rgba(0,0,0,.4)';g.fillRect(x+3,y+Wd+3,L,Wd);
   for(const px of[.22,.5,.78]){const q=Math.round(x+L*px);g.fillStyle='#1d2d38';g.fillRect(q,y+Wd-1,4,6);g.fillStyle='#34495a';g.fillRect(q,y+Wd-1,1,6);g.fillStyle='rgba(190,230,245,.35)';g.fillRect(q-1,y+Wd+5,6,1)}
   Maps.box(g,x,y,L,Wd,ht,{c:'#4a5966',win:false,roof:'flat',rn:Math.random});
@@ -115,6 +116,7 @@ Maps.bridge=(L,Wd)=>{
   g.fillStyle='#9fb4c2';g.fillRect(rx,ry,L,1);g.fillRect(rx,ry+Wd-1,L,1);
   for(let i=0;i<L;i+=6){g.fillStyle='#c4d4de';g.fillRect(rx+i,ry-1,1,2);g.fillRect(rx+i,ry+Wd-2,1,2)}
   for(const q of[2,L-3]){g.fillStyle='#252c30';g.fillRect(rx+q,ry-5,1,6);g.fillStyle='#ffd98a';g.fillRect(rx+q-1,ry-6,3,1)}
+  if(K>1){g.fillStyle='rgba(255,255,255,.06)';for(let i=0;i<L*2;i++)g.fillRect(rx+rn2()*(L-1),ry+2+rn2()*(Wd-5),1/K,1/K);for(let i=3;i<L-3;i+=9){g.fillStyle='rgba(0,0,0,.25)';g.fillRect(rx+i,ry+2,1/K,Wd-4)}}
   return c};
 
 // ---------------------------------------------------------------- дымка заражения (мягкие маски по районам)
@@ -284,9 +286,9 @@ Maps.bakeCity=function(o){
   return{cv:c,K,lamps,lights,water,wat,items,blocks}};
 
 // ---------------------------------------------------------------- этап 2: городской район 330×270
-Maps.city2=function(){
+Maps.city2=function(K){
   const hy=[19,63,107,151,195,239].map(y=>({y,w:y===107||y===195?7:5,maj:y===107||y===195})),vx=[3,47,91,135,179,311].map(x=>({x,w:x===91?7:5,maj:x===91}));
-  return Maps.bakeCity({w:330,h:270,top:22,seed:11,hy,vx,
+  return Maps.bakeCity({w:330,h:270,K:K||1,top:22,seed:11,hy,vx,
     rv0:y=>222+Math.sin(y/34)*2.4,rv1:y=>262+Math.sin(y/34+.8)*2.4,
     ground:(x,y)=>[13,22,30],
     zone:(cx,cy,b)=>{if(b.x0<=105&&b.x1>=105&&b.y0<=95&&b.y1>=95)return'home';if(b.x0<=165&&b.x1>=165&&b.y1>=250)return'base';

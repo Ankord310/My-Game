@@ -9,7 +9,7 @@ const Mil={
   tut:'s3',tutAuto:false,rs:2,map:null,haze:null,br:null,lt:0,
   enter(){
     Snd.play('mil');
-    if(!this.map){this.map=Maps.city3(RS);this.br=Maps.bridge(46,8);
+    if(!this.map){this.map=Maps.city3(RS);this.br=Maps.bridge(46,8,RS);
       const hz=this.haze=new Maps.Haze(330,270,3),ids='ABCDEF',map=this.map;
       for(const id of ids){const r=Maps.D3[id];hz.addMask((x,y)=>{const d=Math.min(x-r[0],r[2]-x,y-r[1],r[3]-y);return Maps.sstep(-8,30,d)*(map.wat[Math.min(269,y|0)*330+Math.min(329,x|0)]>0?.3:1)})}
       for(const k of[6,7,8]){const m=MN[k];hz.addMask((x,y)=>Math.max(0,1-Math.hypot(x-m.x,(y-m.y)*1.2)/20))}}
@@ -192,8 +192,8 @@ const Mil={
       const a=tm*2.2,bx=313,by=120;cx.save();cx.globalCompositeOperation='lighter';for(let k=0;k<4;k++){cx.strokeStyle='rgba(120,240,230,'+(.2-k*.04)+')';cx.beginPath();cx.moveTo(bx,by);cx.lineTo(bx+Math.cos(a-k*.07)*46,by+Math.sin(a-k*.07)*30);cx.stroke()}cx.restore()}
     // мосты
     s.n.forEach(o=>{if(o.k!=='b')return;const X=o.x-23,Y=Math.round(o.y-4);
-      if(!o.dead)cx.drawImage(this.br,X-4,Y-6);
-      else{cx.drawImage(this.br,0,0,18,this.br.height,X-4,Y-6,18,this.br.height);cx.drawImage(this.br,this.br.width-18,0,18,this.br.height,X+46-14,Y-6,18,this.br.height);
+      if(!o.dead)Maps.dimg(cx,this.br,X-4,Y-6);
+      else{{const K=this.br.K,bh=this.br.height;cx.drawImage(this.br,0,0,18*K,bh,X-4,Y-6,18,bh/K);cx.drawImage(this.br,this.br.width-18*K,0,18*K,bh,X+46-14,Y-6,18,bh/K)}
         cx.fillStyle='rgba(255,255,255,.5)';for(let k=0;k<8;k++){const u=(tm*.8+k/8)%1;cx.fillRect(o.x-6+Math.sin(k*2+tm)*6,o.y+3-u*6,2,1)}
         for(let k=0;k<5;k++){const u=(tm*.5+k/5)%1;cx.fillStyle='rgba(40,30,34,'+(.3*(1-u)).toFixed(2)+')';cx.beginPath();cx.arc(o.x-5+k*3,o.y-5-u*16,2+u*3,0,TAU);cx.fill()}
         Post.glow(o.x,o.y-1,14,'255,120,50',.2+.08*Math.sin(tm*8))}

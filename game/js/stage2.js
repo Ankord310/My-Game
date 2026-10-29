@@ -36,10 +36,10 @@ const STN={police:{at:'47,107',n:'ПОЛИЦИЯ',roof:'#3a64a8',q:[[1,-1],[-1,-
 const VEH={police:{l:8,w:4,c:'#e9eef2',s:'#2f62c8',f:['#ff3b2f','#3b6bff']},amb:{l:9,w:5,c:'#f3f5f6',s:'#d8332a',f:['#ff3b2f','#ffffff'],cross:1},
   fire:{l:12,w:5,c:'#c8302a',s:'#f2f2f2',f:['#ff3b2f','#ffb03b'],ladder:1},spec:{l:10,w:5,c:'#262e33',s:'#e5a93b',f:['#3b6bff','#9fd0ff'],arm:1}};
 const Op={
-  tut:'s2',tutAuto:false,map:null,br:null,lt:0,
+  tut:'s2',tutAuto:false,rs:2,map:null,br:null,lt:0,
   enter(){
     Snd.play('op');
-    if(!this.map){this.map=Maps.city2();this.br=Maps.bridge(48,7)}
+    if(!this.map){this.map=Maps.city2(RS);this.br=Maps.bridge(48,7,RS)}
     if(!this.map.stn)this.bakeStations();
     this.mkStrip();
     const s=this.s={t:0,dur:180,calls:[],foci:[],units:[],sel:null,losses:0,ok:0,fail:0,id:1,fat:0,lock:0,home:false,log:[],crew:{police:3,amb:3,fire:2,spec:0},specMax:1,nx:5,end:false,fid:1,hudT:0,spawnT:{},fx:[],sig:'',vis:{},wave:24,amb:30,
@@ -49,7 +49,7 @@ const Op={
     if(Coach.need('s2'))this.coach();else say('Смена диспетчера началась. Нажимайте на мигающие метки вызовов.',4);
   },
   exit(){$('#fat').style.opacity=0;$('#app').classList.remove('cine');$('#cap').textContent=''},
-  mkStrip(){const ex=Math.max(0,OX);this.exW=ex;this.strip=ex>2?Maps.cityStrip('c2',ex):null},
+  mkStrip(){const ex=Math.max(0,OX);this.exW=ex;this.strip=ex>2?Maps.cityStrip('c2',ex,RS):null},
   resize(){if(this.s&&this.exW!==Math.max(0,OX))this.mkStrip()},
   // части служб: двор, здание и эмблема на крыше — запекаются в карту один раз
   bakeStations(){
@@ -283,27 +283,9 @@ const Op={
     panel(h);
   },
   // ---------------------------------------------------------------- рисование
-  veh(x,y,dx,dy,col,o){ // небольшая машина: тень, кузов, крыша, фары
-    const hz=Math.abs(dx)>Math.abs(dy),w=hz?(o.big?9:6):(o.big?5:3),h=hz?(o.big?5:3):(o.big?9:6);x=Math.round(x-w/2);y=Math.round(y-h/2);
-    cx.fillStyle='rgba(0,0,0,.35)';cx.fillRect(x+1,y+2,w,h);
-    cx.fillStyle=Maps.sh(col,.55);cx.fillRect(x,y+1,w,h);cx.fillStyle=col;cx.fillRect(x,y,w,h);cx.fillStyle='rgba(255,255,255,.28)';cx.fillRect(x,y,w,1);
-    cx.fillStyle='rgba(8,16,24,.75)';if(hz){cx.fillRect(x+(dx>0?w-3:1),y+1,2,h-2)}else{cx.fillRect(x+1,y+(dy>0?h-3:1),w-2,2)}
-    return{x,y,w,h}},
+  veh(x,y,dx,dy,col,o){Art3.car(x,y,dx,dy,{k:'civ',col})},
   // машина службы: у каждой своя модель, мигалки и свет фар
-  svcVeh(x,y,dx,dy,k,t,parked){
-    const V=VEH[k],hz=Math.abs(dx)>=Math.abs(dy),w=hz?V.l:V.w,h=hz?V.w:V.l,x0=Math.round(x-w/2),y0=Math.round(y-h/2),fw=hz?dx>=0:dy>=0;
-    cx.fillStyle='rgba(0,0,0,.42)';cx.fillRect(x0+1,y0+2,w,h);
-    cx.fillStyle=Maps.sh(V.c,.55);cx.fillRect(x0,y0+1,w,h);cx.fillStyle=V.c;cx.fillRect(x0,y0,w,h);cx.fillStyle='rgba(255,255,255,.3)';cx.fillRect(x0,y0,w,1);
-    cx.fillStyle=V.s;if(hz)cx.fillRect(x0,y0+(h>>1),w,1);else cx.fillRect(x0+(w>>1),y0,1,h);
-    if(V.arm){cx.fillStyle='#3e4a3a';if(hz)cx.fillRect(x0+2,y0+1,w-4,1);else cx.fillRect(x0+1,y0+2,1,h-4)}
-    if(V.ladder){cx.fillStyle='#d6dde2';if(hz){cx.fillRect(x0+(fw?0:4),y0+1,w-4,1);for(let i=1;i<w-4;i+=2)cx.fillRect(x0+(fw?0:4)+i,y0+1,1,h-2)}else{cx.fillRect(x0+1,y0+(fw?0:4),1,h-4);for(let i=1;i<h-4;i+=2)cx.fillRect(x0+1,y0+(fw?0:4)+i,w-2,1)}}
-    if(V.cross){const mx=x0+(w>>1),my=y0+(h>>1);cx.fillStyle='#d8332a';cx.fillRect(mx-1,my,3,1);cx.fillRect(mx,my-1,1,3)}
-    cx.fillStyle='rgba(10,20,30,.85)';if(hz)cx.fillRect(fw?x0+w-3:x0+1,y0+1,2,h-2);else cx.fillRect(x0+1,fw?y0+h-3:y0+1,w-2,2);
-    if(parked)return;
-    const fl=Math.floor(t*9+(k.length))%2,lx=hz?(fw?x0+w-5:x0+3):x0+(w>>1)-1,ly=hz?y0+(h>>1)-1:(fw?y0+h-5:y0+3);
-    cx.fillStyle=V.f[fl];cx.fillRect(lx,ly,2,1);cx.fillStyle=V.f[1-fl];cx.fillRect(hz?lx:lx+1,hz?ly+1:ly+1,hz?2:1,1);
-    Post.glow(lx+1,ly+1,12,fl?'59,107,255':'255,59,47',.38);
-    cx.save();cx.globalCompositeOperation='lighter';cx.fillStyle='rgba(255,246,190,.15)';if(hz)cx.fillRect(fw?x0+w:x0-12,y0+1,12,h-2);else cx.fillRect(x0+1,fw?y0+h:y0-12,w-2,12);cx.restore()},
+  svcVeh(x,y,dx,dy,k,t,parked){Art3.car(x,y,dx,dy,{k,park:parked})},
   // части служб: свободные машины во дворе и подпись
   stations(t){const st=this.map.stn;if(!st)return;const s=this.s;
     for(const k in st){const q=st[k],max=k==='spec'?(s.spec?s.specMax:0):k==='fire'?2:3,n=Math.min(max,s.crew[k]||0),L=VEH[k].l+3;
@@ -322,8 +304,7 @@ const Op={
     for(let q=0;q<2;q++){const u=(t*.55+f.id*.37+q*.5)%1;cx.strokeStyle='rgba(255,92,76,'+((1-u)*.55).toFixed(2)+')';cx.lineWidth=1;cx.beginPath();cx.ellipse(f.x,f.y,r0*(.55+u*.95),r0*(.55+u*.95)*.8,0,0,TAU);cx.stroke()}
     // заражённые на улицах
     const cnt=Math.min(9,f.hp*2+3);
-    for(let k=0;k<cnt;k++){const a=k*2.4+f.id+t*(k%2?.28:-.22),rad=r0*(.2+.62*((k*.37)%1)),x=f.x+Math.cos(a)*rad,y=f.y+Math.sin(a)*rad*.8,b=Math.sin(t*5+k*1.7)>.6?-1:0;
-      cx.fillStyle='rgba(0,0,0,.35)';cx.fillRect(Math.round(x),Math.round(y)+2,3,1);cx.fillStyle='#3f5a46';cx.fillRect(Math.round(x),Math.round(y)-1+b,2,3);cx.fillStyle='#8aa584';cx.fillRect(Math.round(x),Math.round(y)-2+b,2,1);cx.fillStyle='#ff3b2f';cx.fillRect(Math.round(x)+1,Math.round(y)-2+b,1,1)}
+    for(let k=0;k<cnt;k++){const a=k*2.4+f.id+t*(k%2?.28:-.22),rad=r0*(.2+.62*((k*.37)%1));Art3.zombie(f.x+Math.cos(a)*rad,f.y+Math.sin(a)*rad*.8,f.id*17+k,t,true)}
     // споры
     cx.save();cx.globalCompositeOperation='lighter';
     for(let k=0;k<7;k++){const u=(t*.45+k/7+f.id*.13)%1,x=f.x+Math.sin(k*2.3+f.id)*r0*.7+Math.sin(u*6+k)*2,y=f.y+Math.cos(k*1.7)*r0*.35-u*18;cx.fillStyle='rgba(255,110,90,'+((1-u)*.8).toFixed(2)+')';cx.fillRect(Math.round(x),Math.round(y),k%3?1:2,k%3?1:2)}
@@ -373,7 +354,7 @@ const Op={
     cx.translate(OX,0);cx.beginPath();cx.rect(-OX,0,MW,H);cx.clip();Maps.blit(cx,this.map,this.strip);
     // вода: мерцание и течение
     cx.fillStyle='rgba(190,235,250,.5)';for(let i=0;i<46;i++){const y=22+((i*53+t*(5+(i%4)*1.5))%(H-22)),a=222+Math.sin(y/34)*2.4,b=262+Math.sin(y/34+.8)*2.4,x=a+3+((i*37)%Math.max(1,(b-a-6)));if(Math.sin(t*1.7+i)>-.1)cx.fillRect(x|0,y|0,2+(i%3),1)}
-    for(const y of[107,195])cx.drawImage(this.br,218-4,Math.round(y-3.5)-6);
+    for(const y of[107,195])Maps.dimg(cx,this.br,218-4,Math.round(y-3.5)-6);
     // ночные огни: мерцание фонарей и сигнальных огней
     for(const L of this.map.lamps){const fl=.7+.3*Math.sin(t*1.3+L.x*.7+L.y);Post.glow(L.x,L.y+1,13,'255,214,140',.12*fl)}
     for(const L of this.map.lights)if(Math.floor(t*1.2+L.x)%2===0){cx.fillStyle='#ff4a3d';cx.fillRect(L.x,L.y,1,1);Post.glow(L.x,L.y,5,'255,60,50',.35)}

@@ -74,6 +74,26 @@ const Art3=(()=>{
         cx.fillStyle=r(i,8)<.5?'#3a2f2a':'#8a7a68';cx.fillRect(q(px),q(py),h()*3,h()*3)}
       for(let k=0;k<8;k++){const yy=y-6-k*4.2*Math.min(1,u*2),xx=x+Math.sin(k*2.1+u*2)*(2+k*.6),rr=5+k*1.8+u*4,al=(.55-k*.04)*Math.min(1,u*4)*(1-Math.max(0,u-.5)/.5);
         if(al<=0)continue;const g=cx.createRadialGradient(xx,yy,0,xx,yy,rr);g.addColorStop(0,'rgba(34,28,30,'+al.toFixed(3)+')');g.addColorStop(1,'rgba(34,28,30,0)');cx.fillStyle=g;cx.fillRect(xx-rr,yy-rr,rr*2,rr*2)}},
+    // машина: направление (dx,dy), тип o.k: police|amb|fire|spec|civ; o.col — цвет гражданской; o.park — стоит без мигалок
+    car(x,y,dx,dy,o){const k=o.k||'civ',T=performance.now()/1000,P={
+        civ:{l:6.5,w:3.4,body:o.col||'#9aa6ad',stripe:null,roof:null},police:{l:7.5,w:3.6,body:'#eef2f5',stripe:'#2f62c8',roof:'#dfe6ea',bar:['#ff3b2f','#3b6bff']},
+        amb:{l:9,w:4.2,body:'#f6f8f9',stripe:'#d8332a',roof:'#e6ecef',bar:['#ff3b2f','#ffffff'],cross:1},fire:{l:12,w:4.4,body:'#c8302a',stripe:'#f2f2f2',roof:'#a82822',bar:['#ff3b2f','#ffb03b'],ladder:1},
+        spec:{l:10,w:4.4,body:'#2b343a',stripe:'#e5a93b',roof:'#1f272c',bar:['#3b6bff','#9fd0ff'],arm:1}}[k]||{l:6.5,w:3.4,body:'#999'},L=P.l,Wd=P.w;
+      const fl=Math.floor(T*9+(x*.3))%2;cx.save();cx.translate(q(x),q(y));
+      if(Math.abs(dx)>=Math.abs(dy)){if(dx<0)cx.scale(-1,1)}else cx.rotate(dy>0?Math.PI/2:-Math.PI/2);
+      cx.fillStyle='rgba(0,0,0,.42)';cx.fillRect(-L/2+.7,-Wd/2+1.2,L,Wd);
+      for(const wx of[-L/2+1.4,L/2-2.9]){R(wx,-Wd/2-.3,1.5,.7,'#0c1013');R(wx,Wd/2-.4,1.5,.7,'#0c1013')}
+      R(-L/2,-Wd/2,L,Wd,Maps.sh(P.body,.62));R(-L/2+.3,-Wd/2+.3,L-.6,Wd-.6,P.body);R(-L/2+.3,-Wd/2+.3,L-.6,.5,'rgba(255,255,255,.4)');R(-L/2+.3,Wd/2-.8,L-.6,.5,'rgba(0,0,0,.22)');
+      if(P.stripe){R(-L/2+.3,-.2,L-.6,.6,P.stripe)}
+      const cl=P.roof||Maps.sh(P.body,1.12);R(-L/2+L*.28,-Wd/2+.7,L*.36,Wd-1.4,cl);R(-L/2+L*.28,-Wd/2+.7,L*.36,.4,'rgba(255,255,255,.35)');
+      R(L/2-L*.3,-Wd/2+.6,L*.2,Wd-1.2,'#16222c');R(L/2-L*.3,-Wd/2+.6,L*.2,.4,'rgba(170,225,245,.65)');R(-L/2+L*.1,-Wd/2+.7,L*.14,Wd-1.4,'#121c25');
+      if(P.cross){R(-1,-.7,2.4,.6,'#d8332a');R(-.1,-1.5,.6,2.4,'#d8332a')}
+      if(P.ladder){for(let i=0;i<L*.55;i+=.8){R(-L/2+1+i,-.9,.4,1.8,'#cfd6db')}R(-L/2+1,-.9,L*.55,.4,'#e6ebee');R(-L/2+1,.5,L*.55,.4,'#e6ebee')}
+      if(P.arm){R(-L/2+L*.45,-Wd/2+1,2,Wd-2,'#3e4a3a');R(-L/2+L*.45+.5,-.5,2.4,.7,'#161b1e')}
+      if(P.bar&&!o.park){R(-.5,-Wd/2+.6,1,Wd-1.2,'#10161a');R(-.5,-Wd/2+.6,1,(Wd-1.2)/2,P.bar[fl]);R(-.5,0,1,(Wd-1.2)/2,P.bar[1-fl])}
+      R(L/2-.5,-Wd/2+.5,.5,.8,'#fff4c0');R(L/2-.5,Wd/2-1.3,.5,.8,'#fff4c0');R(-L/2,-Wd/2+.5,.5,.8,o.park?'#7a1d18':'#ff3b2f');R(-L/2,Wd/2-1.3,.5,.8,o.park?'#7a1d18':'#ff3b2f');
+      if(!o.park){cx.save();cx.globalCompositeOperation='lighter';const g=cx.createLinearGradient(L/2,0,L/2+10,0);g.addColorStop(0,'rgba(255,244,190,.2)');g.addColorStop(1,'rgba(255,244,190,0)');cx.fillStyle=g;cx.beginPath();cx.moveTo(L/2,-Wd/2+.4);cx.lineTo(L/2+10,-Wd/2-2);cx.lineTo(L/2+10,Wd/2+2);cx.lineTo(L/2,Wd/2-.4);cx.closePath();cx.fill();cx.restore()}
+      cx.restore();if(P.bar&&!o.park)Post.glow(x,y,13,fl?'59,107,255':'255,59,47',.4)},
     // кольцо вспышки заражения: два контура и искры
     ring(x,y,u,red){const c=red?'255,96,80':'125,255,166',r1=6+u*28;cx.strokeStyle='rgba('+c+','+(1-u).toFixed(2)+')';cx.lineWidth=1.5;cx.beginPath();cx.ellipse(x,y,r1,r1*.55,0,0,6.3);cx.stroke();
       cx.lineWidth=.8;cx.beginPath();cx.ellipse(x,y,r1*.62,r1*.34,0,0,6.3);cx.stroke();
